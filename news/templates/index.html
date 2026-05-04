@@ -1,0 +1,74 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MAYBACH - Tin Tức Thể Thao 24h</title>
+    <link rel="stylesheet" href="{% static 'style.css' %}">     
+</head>
+<body>
+
+    <header>
+        <div class="logo">MAY<span>BACH</span></div>
+        <nav>
+            <ul>
+                <li><a href="#">Bóng đá</a></li>
+                <li><a href="#">Tennis</a></li>
+                <li><a href="#">NBA</a></li>
+                <li><a href="#">Lịch thi đấu</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <section class="live-scores">
+        <div class="score-item">ENG 2 - 1 GER (FT)</div>
+        <div class="score-item">FRA 0 - 0 ITA (30')</div>
+        <div class="score-item">VIE 1 - 0 THA (HT)</div>
+    </section>
+
+  <main class="container">
+    {% if posts %}
+        <section class="hero-news">
+            {% if posts.0.image_file %}
+                <img src="{{ posts.0.image_file.url }}" alt="Tin nổi bật">
+            {% elif posts.0.image_url %}
+                <img src="{{ posts.0.image_url }}" alt="Tin nổi bật">
+            {% else %}
+                <img src="https://via.placeholder.com/800x400" alt="Tin nổi bật">
+            {% endif %}
+            
+            <div class="hero-text">
+                <h1>{{ posts.0.title }}</h1>
+                <p>{{ posts.0.content|truncatewords:30 }}</p>
+            </div>
+        </section>
+    {% endif %}
+
+    <aside class="side-news">
+        <h2>Tin mới nhất</h2>
+        {% for post in posts %}
+            <article class="news-card">
+                {% if post.image_file %}
+                    <img src="{{ post.image_file.url }}" alt="thumb">
+                {% elif post.image_url %}
+                    <img src="{{ post.image_url }}" alt="thumb">
+                {% else %}
+                    <img src="https://via.placeholder.com/100x70" alt="thumb">
+                {% endif %}
+                
+                <div>
+                    <strong>{{ post.title }}</strong>
+                    <p>{{ post.content|truncatewords:10 }}</p>
+                </div>
+            </article>
+        {% endfor %}
+    </aside>
+</main>
+
+    <footer>
+        <p>&copy; 2026 SportNews. Thiết kế bởi Coder Python.</p>
+    </footer>
+
+</body>
+</html>
