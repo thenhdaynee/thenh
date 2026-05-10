@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from django.contrib.auth.models import User  # Thêm dòng này
+from .models import Post
 
 # Đoạn code tạo admin tự động
 if not User.objects.filter(username='thenh_admin').exists():
