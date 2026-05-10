@@ -1,3 +1,4 @@
+import dj_database_url
 import os
 """
 Django settings for sport_news_web project.
@@ -76,10 +77,11 @@ WSGI_APPLICATION = 'sport_news_web.wsgi.application'
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+
+    'default': dj_database_url.config(
+        default='postgresql://db_thenh_user:hkDtYLtbxfQoOX9ERDJ3tRzevGQxc1I0@dpg-d804j5rtqb8s73fr7s6g-a/db_thenh',
+        conn_max_age=600
+    )
 }
 
 
