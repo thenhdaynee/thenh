@@ -1,5 +1,9 @@
 from django.shortcuts import render
-from .models import Post # Nhập bảng Post vào
+from django.contrib.auth.models import User  # Thêm dòng này
+
+# Đoạn code tạo admin tự động
+if not User.objects.filter(username='thenh_admin').exists():
+    User.objects.create_superuser('thenh_admin', 'thenhredmiturbo@gmail.com', 'Thanh123')
 
 def home(request):
     # Lấy tất cả bài viết, bài mới nhất xếp lên đầu
