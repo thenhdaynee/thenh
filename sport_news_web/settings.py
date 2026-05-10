@@ -38,7 +38,9 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
+    'cloudinary_storage',
     'django.contrib.staticfiles',
+    'cloudinary',
     'news',
 ]
 
@@ -127,3 +129,11 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')  #ưu tiên lấy ảnh từ máy tính
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': 'drrpj7yo5',
+    'API_KEY': '126545119978715',
+    'API_SECRET': '9TvhU4NsqhngdtTzIYJOuFL20LA'
+}
+
+# Bảo Django dùng Cloudinary để lưu file Media
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
