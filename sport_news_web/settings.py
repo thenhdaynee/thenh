@@ -33,12 +33,12 @@ ALLOWED_HOSTS = ['*']
 # Application definition
 
 INSTALLED_APPS = [
+    'cloudinary_storage',    # ĐƯA LÊN ĐẦU TIÊN
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
-    'cloudinary_storage',
     'django.contrib.staticfiles',
     'cloudinary',
     'news',
@@ -128,7 +128,7 @@ STATICFILES_DIRS = [
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')  #ưu tiên lấy ảnh từ máy tính
+#MEDIA_ROOT = os.path.join(BASE_DIR, 'media')  #ưu tiên lấy ảnh từ máy tính
 CLOUDINARY_STORAGE = {
     'CLOUD_NAME': 'drrpj7yo5',
     'API_KEY': '126545119978715',
