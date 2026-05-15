@@ -1,9 +1,12 @@
 import dj_database_url
 import os
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
 from pathlib import Path
-from dotenv import load_dotenv  # ← THÊM
+from dotenv import load_dotenv
 
-load_dotenv()  # ← THÊM
+load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -55,7 +58,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'sport_news_web.wsgi.application'
 
-
 if os.environ.get('DATABASE_URL'):
     DATABASES = {
         'default': dj_database_url.config(
@@ -64,7 +66,6 @@ if os.environ.get('DATABASE_URL'):
         )
     }
 else:
-    # Chạy local thì dùng SQLite
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
@@ -89,9 +90,18 @@ STATIC_URL = 'static/'
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
 # Media + Cloudinary
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+cloudinary.config(
+    cloud_name=os.environ.get('CLOUDINARY_CLOUD_NAME'),
+    api_key=os.environ.get('CLOUDINARY_API_KEY'),
+    api_secret=os.environ.get('CLOUDINARY_API_SECRET'),
+    secure=True
+)
+
 CLOUDINARY_STORAGE = {
     'CLOUD_NAME': os.environ.get('CLOUDINARY_CLOUD_NAME'),
     'API_KEY': os.environ.get('CLOUDINARY_API_KEY'),
@@ -101,6 +111,7 @@ CLOUDINARY_STORAGE = {
 DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
 print("=== CLOUDINARY CHECK ===")
 print("CLOUD_NAME:", os.environ.get('CLOUDINARY_CLOUD_NAME'))
 print("API_KEY:", os.environ.get('CLOUDINARY_API_KEY'))
