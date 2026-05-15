@@ -101,3 +101,7 @@ CLOUDINARY_STORAGE = {
 DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+print("=== CLOUDINARY CHECK ===")
+print("CLOUD_NAME:", os.environ.get('CLOUDINARY_CLOUD_NAME'))
+print("API_KEY:", os.environ.get('CLOUDINARY_API_KEY'))
+print("STORAGE:", DEFAULT_FILE_STORAGE)
