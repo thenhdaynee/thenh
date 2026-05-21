@@ -28,7 +28,7 @@
     </header>
 
     <section class="bg-[#222] text-white py-2 text-xs md:text-sm">
-        <div class="max-w-7xl mx-auto px-4 flex space-x-6 overflow-x-auto whitespace-nowrap scrollbar-hide">
+        <div class="max-w-7xl mx-auto px-4 flex space-x-6 overflow-x-auto whitespace-nowrap">
             <div class="flex items-center space-x-2 bg-gray-800 px-3 py-1 rounded">
                 <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
                 <span>ENG 2 - 1 GER (FT)</span>
@@ -53,9 +53,9 @@
                     <article class="group cursor-pointer">
                         <div class="overflow-hidden rounded bg-gray-100 aspect-video mb-4">
                             {% if posts.0.image_file %}
-                                <img src="{{ posts.0.image_file.url }}" alt="{{ posts.0.title }}" class="w-full h-full object-cover group-hover:scale-102 transition duration-300">
-                            {%自动 elif posts.0.image_url %}
-                                <img src="{{ posts.0.image_url }}" alt="{{ posts.0.title }}" class="w-full h-full object-cover group-hover:scale-102 transition duration-300">
+                                <img src="{{ posts.0.image_file.url }}" alt="Tin nổi bật" class="w-full h-full object-cover">
+                            {% elif posts.0.image_url %}
+                                <img src="{{ posts.0.image_url }}" alt="Tin nổi bật" class="w-full h-full object-cover">
                             {% else %}
                                 <img src="https://via.placeholder.com/800x450" alt="Tin nổi bật" class="w-full h-full object-cover">
                             {% endif %}
@@ -87,10 +87,10 @@
                                 {% endif %}
                             </div>
                             <div class="flex-1 min-w-0">
-                                <h3 class="text-sm font-semibold text-gray-900 leading-snug group-hover:text-[#9f224e] line-clamp-2 transition">
+                                <h3 class="text-sm font-semibold text-gray-900 leading-snug group-hover:text-[#9f224e] transition line-clamp-2">
                                     {{ post.title }}
-                               </h3>
-                                <p class="text-xs text-gray-500 mt-1 line-clamp-1">
+                                </h3>
+                                <p class="text-xs text-gray-500 mt-1">
                                     {{ post.content|truncatewords:8 }}
                                 </p>
                             </div>
@@ -107,7 +107,7 @@
             </h2>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {% for post in posts %}
-                    <article class="bg-white rounded border border-gray-200 shadow-xs hover:shadow-md transition overflow-hidden flex flex-col justify-between">
+                    <article class="bg-white rounded border border-gray-200 shadow-sm hover:shadow-md transition overflow-hidden flex flex-col justify-between">
                         <div>
                             <div class="aspect-video w-full bg-gray-100 overflow-hidden">
                                 {% if post.image_file %}
@@ -143,11 +143,6 @@
             <div>
                 <p class="font-bold text-white text-lg">THENH<span class="text-[#9f224e]">DEPTRAI</span></p>
                 <p class="text-xs mt-1 text-gray-500">&copy; Thiết kế bởi Thenh Phóng Viên 24/24.</p>
-            </div>
-            <div class="flex space-x-6 text-xs text-gray-500">
-                <a href="#" class="hover:text-white">Về chúng tôi</a>
-                <a href="#" class="hover:text-white">Điều khoản bảo mật</a>
-                <a href="#" class="hover:text-white">Liên hệ quảng cáo</a>
             </div>
         </div>
     </footer>
