@@ -5,69 +5,151 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>THENHDEPTRAI - Tin Tức Thể Thao 24h</title>
-    <link rel="stylesheet" href="{% static 'style.css' %}">     
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="{% static 'style.css' %}"> 
 </head>
-<body>
+<body class="bg-[#f7f7f7] text-[#222] font-sans antialiased">
 
-    <header>
-        <div class="logo">THENH<span>DEPTRAI</span></div>
-        <nav>
-            <ul>
-                <li><a href="#">Bóng đá</a></li>
-                <li><a href="#">Tennis</a></li>
-                <li><a href="#">NBA</a></li>
-                <li><a href="#">Lịch thi đấu</a></li>
-            </ul>
-        </nav>
+    <header class="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
+            <div class="logo text-2xl font-bold tracking-wider text-[#9f224e]">
+                THENH<span class="text-gray-700 font-light text-xl">DEPTRAI</span>
+            </div>
+            <nav class="hidden md:flex space-x-6 text-[15px] font-medium text-gray-600">
+                <a href="#" class="hover:text-[#9f224e] transition">Bóng đá</a>
+                <a href="#" class="hover:text-[#9f224e] transition">Tennis</a>
+                <a href="#" class="hover:text-[#9f224e] transition">NBA</a>
+                <a href="#" class="hover:text-[#9f224e] transition">Lịch thi đấu</a>
+            </nav>
+            <div class="text-sm text-gray-500 hidden sm:block">
+                <span class="text-red-600 font-semibold">● Live:</span> 24/7 Thể thao
+            </div>
+        </div>
     </header>
 
-    <section class="live-scores">
-        <div class="score-item">ENG 2 - 1 GER (FT)</div>
-        <div class="score-item">FRA 0 - 0 ITA (30')</div>
-        <div class="score-item">VIE 1 - 0 THA (HT)</div>
+    <section class="bg-[#222] text-white py-2 text-xs md:text-sm">
+        <div class="max-w-7xl mx-auto px-4 flex space-x-6 overflow-x-auto whitespace-nowrap scrollbar-hide">
+            <div class="flex items-center space-x-2 bg-gray-800 px-3 py-1 rounded">
+                <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+                <span>ENG 2 - 1 GER (FT)</span>
+            </div>
+            <div class="flex items-center space-x-2 bg-gray-800 px-3 py-1 rounded">
+                <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                <span>FRA 0 - 0 ITA (30')</span>
+            </div>
+            <div class="flex items-center space-x-2 bg-gray-800 px-3 py-1 rounded">
+                <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+                <span>VIE 1 - 0 THA (HT)</span>
+            </div>
+        </div>
     </section>
 
-  <main class="container">
-    {% if posts %}
-        <section class="hero-news">
-            {% if posts.0.image_file %}
-                <img src="{{ posts.0.image_file.url }}" alt="Tin nổi bật">
-            {% elif posts.0.image_url %}
-                <img src="{{ posts.0.image_url }}" alt="Tin nổi bật">
-            {% else %}
-                <img src="https://via.placeholder.com/800x400" alt="Tin nổi bật">
-            {% endif %}
+    <main class="max-w-7xl mx-auto px-4 py-6">
+        
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 border-b border-gray-200 pb-6 mb-6">
             
-            <div class="hero-text">
-                <h1>{{ posts.0.title }}</h1>
-                <p>{{ posts.0.content|truncatewords:30 }}</p>
+            <div class="lg:col-span-2">
+                {% if posts %}
+                    <article class="group cursor-pointer">
+                        <div class="overflow-hidden rounded bg-gray-100 aspect-video mb-4">
+                            {% if posts.0.image_file %}
+                                <img src="{{ posts.0.image_file.url }}" alt="{{ posts.0.title }}" class="w-full h-full object-cover group-hover:scale-102 transition duration-300">
+                            {%自动 elif posts.0.image_url %}
+                                <img src="{{ posts.0.image_url }}" alt="{{ posts.0.title }}" class="w-full h-full object-cover group-hover:scale-102 transition duration-300">
+                            {% else %}
+                                <img src="https://via.placeholder.com/800x450" alt="Tin nổi bật" class="w-full h-full object-cover">
+                            {% endif %}
+                        </div>
+                        <h1 class="text-2xl md:text-3xl font-bold text-gray-900 leading-tight group-hover:text-[#9f224e] transition">
+                            {{ posts.0.title }}
+                        </h1>
+                        <p class="text-gray-600 mt-2 text-[15px] leading-relaxed">
+                            {{ posts.0.content|truncatewords:35 }}
+                        </p>
+                    </article>
+                {% endif %}
+            </div>
+
+            <aside class="space-y-4 border-t lg:border-t-0 lg:border-l lg:pl-6 border-gray-200 pt-4 lg:pt-0">
+                <h2 class="text-lg font-bold text-[#9f224e] uppercase tracking-wide border-b-2 border-[#9f224e] pb-1 mb-3">
+                    Tin mới nhất
+                </h2>
+                <div class="divide-y divide-gray-200 max-h-[450px] overflow-y-auto pr-2">
+                    {% for post in posts %}
+                        <article class="flex space-x-3 py-3 first:pt-0 group cursor-pointer">
+                            <div class="w-24 h-16 flex-shrink-0 overflow-hidden rounded bg-gray-100">
+                                {% if post.image_file %}
+                                    <img src="{{ post.image_file.url }}" alt="thumb" class="w-full h-full object-cover">
+                                {% elif post.image_url %}
+                                    <img src="{{ post.image_url }}" alt="thumb" class="w-full h-full object-cover">
+                                {% else %}
+                                    <img src="https://via.placeholder.com/120x80" alt="thumb" class="w-full h-full object-cover">
+                                {% endif %}
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <h3 class="text-sm font-semibold text-gray-900 leading-snug group-hover:text-[#9f224e] line-clamp-2 transition">
+                                    {{ post.title }}
+                               </h3>
+                                <p class="text-xs text-gray-500 mt-1 line-clamp-1">
+                                    {{ post.content|truncatewords:8 }}
+                                </p>
+                            </div>
+                        </article>
+                    {% endfor %}
+                </div>
+            </aside>
+        </div>
+
+        <section class="mt-8">
+            <h2 class="text-xl font-bold text-gray-900 mb-6 flex items-center">
+                <span class="w-3 h-6 bg-[#9f224e] inline-block mr-2 rounded-sm"></span>
+                Tin tức tiêu điểm khác
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {% for post in posts %}
+                    <article class="bg-white rounded border border-gray-200 shadow-xs hover:shadow-md transition overflow-hidden flex flex-col justify-between">
+                        <div>
+                            <div class="aspect-video w-full bg-gray-100 overflow-hidden">
+                                {% if post.image_file %}
+                                    <img src="{{ post.image_file.url }}" alt="thumb" class="w-full h-full object-cover">
+                                {% elif post.image_url %}
+                                    <img src="{{ post.image_url }}" alt="thumb" class="w-full h-full object-cover">
+                                {% else %}
+                                    <img src="https://via.placeholder.com/400x250" alt="thumb" class="w-full h-full object-cover">
+                                {% endif %}
+                            </div>
+                            <div class="p-4">
+                                <h3 class="font-bold text-base text-gray-900 hover:text-[#9f224e] transition line-clamp-2 mb-2">
+                                    {{ post.title }}
+                                </h3>
+                                <p class="text-sm text-gray-600 line-clamp-3">
+                                    {{ post.content|truncatewords:15 }}
+                                </p>
+                            </div>
+                        </div>
+                        <div class="p-4 pt-0 border-t border-gray-100 mt-auto flex justify-between items-center text-xs text-gray-400">
+                            <span>Thể thao 24h</span>
+                            <a href="#" class="text-[#9f224e] font-medium hover:underline">Xem chi tiết →</a>
+                        </div>
+                    </article>
+                {% endfor %}
             </div>
         </section>
-    {% endif %}
 
-    <aside class="side-news">
-        <h2>Tin mới nhất</h2>
-        {% for post in posts %}
-            <article class="news-card">
-                {% if post.image_file %}
-                    <img src="{{ post.image_file.url }}" alt="thumb">
-                {% elif post.image_url %}
-                    <img src="{{ post.image_url }}" alt="thumb">
-                {% else %}
-                    <img src="https://via.placeholder.com/100x70" alt="thumb">
-                {% endif %}
-                
-                <div>
-                    <strong>{{ post.title }}</strong>
-                    <p>{{ post.content|truncatewords:10 }}</p>
-                </div>
-            </article>
-        {% endfor %}
-    </aside>
-</main>
+    </main>
 
-    <footer>
-        <p>&copy; Thiết kế bởi Thenh Phóng Viên 24/24.</p>
+    <footer class="bg-[#222] text-gray-400 text-sm mt-12 py-8 border-t-4 border-[#9f224e]">
+        <div class="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
+            <div>
+                <p class="font-bold text-white text-lg">THENH<span class="text-[#9f224e]">DEPTRAI</span></p>
+                <p class="text-xs mt-1 text-gray-500">&copy; Thiết kế bởi Thenh Phóng Viên 24/24.</p>
+            </div>
+            <div class="flex space-x-6 text-xs text-gray-500">
+                <a href="#" class="hover:text-white">Về chúng tôi</a>
+                <a href="#" class="hover:text-white">Điều khoản bảo mật</a>
+                <a href="#" class="hover:text-white">Liên hệ quảng cáo</a>
+            </div>
+        </div>
     </footer>
 
 </body>
