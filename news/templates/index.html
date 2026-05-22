@@ -6,160 +6,285 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>THENHDEPTRAI - Tin Tức Thể Thao 24h</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <link rel="stylesheet" href="{% static 'style.css' %}"> 
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Source+Serif+4:ital,wght=0,300;0,400;0,600;1,400&display=swap" rel="stylesheet">
+    <style>
+        :root { --red: #c0152a; --red-dark: #96101f; }
+        body { font-family: 'Source Serif 4', Georgia, serif; }
+        .font-display { font-family: 'Oswald', sans-serif; }
+
+        /* TICKER */
+        .ticker-wrap { overflow: hidden; }
+        .ticker-track {
+            display: flex;
+            animation: ticker-scroll 28s linear infinite;
+            width: max-content;
+        }
+        .ticker-wrap:hover .ticker-track { animation-play-state: paused; }
+        @keyframes ticker-scroll {
+            0%   { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+
+        /* ZOOM on hover */
+        .zoom-img { overflow: hidden; }
+        .zoom-img img { transition: transform .4s ease; }
+        .zoom-img:hover img { transform: scale(1.06); }
+
+        /* LIVE DOT */
+        @keyframes pulse-ring {
+            0%   { transform: scale(1); opacity: .8; }
+            100% { transform: scale(2.4); opacity: 0; }
+        }
+        .live-ring::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            background: #fff;
+            animation: pulse-ring 1.4s ease-out infinite;
+        }
+
+        /* SECTION HEADER line */
+        .sec-line { border-bottom: 2px solid #c0152a; }
+    </style>
 </head>
-<body class="bg-[#f7f7f7] text-[#222] font-sans antialiased">
+<body class="bg-[#f0f0f0] text-[#111]">
 
-    <header class="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm py-2">
-        <div class="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-4 md:gap-0">
-            
-            <div class="logo text-2xl font-bold tracking-wider text-[#9f224e]">
-                THENH<span class="text-gray-700 font-light text-xl">DEPTRAI</span>
-            </div>
-            
-            <nav class="flex flex-wrap justify-center gap-2 md:gap-3">
-                <a href="#" class="px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-[#9f224e] hover:text-white rounded-full border border-gray-200 shadow-xs transition duration-200 ease-in-out transform hover:-translate-y-0.5">
-                    ⚽ Bóng đá
-                </a>
-                <a href="#" class="px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-[#9f224e] hover:text-white rounded-full border border-gray-200 shadow-xs transition duration-200 ease-in-out transform hover:-translate-y-0.5">
-                    🎾 Tennis
-                </a>
-                <a href="#" class="px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-[#9f224e] hover:text-white rounded-full border border-gray-200 shadow-xs transition duration-200 ease-in-out transform hover:-translate-y-0.5">
-                    🏀 NBA
-                </a>
-                <a href="#" class="px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-[#9f224e] hover:text-white rounded-full border border-gray-200 shadow-xs transition duration-200 ease-in-out transform hover:-translate-y-0.5">
-                    📅 Lịch thi đấu
-                </a>
-            </nav>
-            
-            <a href="#" class="flex items-center space-x-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-sm rounded-lg shadow-md hover:shadow-lg transition duration-200 transform hover:scale-105 group">
-                <span class="w-2.5 h-2.5 rounded-full bg-white group-hover:animate-ping"></span>
-                <span class="w-2.5 h-2.5 rounded-full bg-white absolute"></span>
-                <span>LIVE 24/7</span>
-            </a>
+<header class="bg-[#0f0f0f] sticky top-0 z-50 shadow-lg">
+    <div class="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
+        <a href="/" class="font-display text-2xl font-bold tracking-widest text-white shrink-0">
+            THENH<span class="text-[#c0152a]">DEPTRAI</span>
+        </a>
+        <nav class="hidden md:flex items-center">
+            <a href="#" class="font-display text-sm text-gray-300 hover:text-white hover:bg-[#c0152a] px-4 py-2 transition-colors tracking-wide">⚽ Bóng đá</a>
+            <a href="#" class="font-display text-sm text-gray-300 hover:text-white hover:bg-[#c0152a] px-4 py-2 transition-colors tracking-wide">🎾 Tennis</a>
+            <a href="#" class="font-display text-sm text-gray-300 hover:text-white hover:bg-[#c0152a] px-4 py-2 transition-colors tracking-wide">🏀 NBA</a>
+            <a href="#" class="font-display text-sm text-gray-300 hover:text-white hover:bg-[#c0152a] px-4 py-2 transition-colors tracking-wide">📅 Lịch thi đấu</a>
+        </nav>
+        <a href="#" class="shrink-0 flex items-center gap-2 bg-[#c0152a] hover:bg-[#96101f] text-white font-display text-sm font-bold px-4 py-2 transition-colors">
+            <span class="relative w-2.5 h-2.5">
+                <span class="live-ring absolute inset-0 rounded-full bg-white opacity-60"></span>
+                <span class="relative block w-2.5 h-2.5 rounded-full bg-white"></span>
+            </span>
+            LIVE 24/7
+        </a>
+    </div>
+</header>
 
+<div class="bg-[#1a1a1a] border-b-2 border-[#c0152a] h-9 flex items-center">
+    <div class="shrink-0 bg-[#c0152a] h-full flex items-center px-4">
+        <span class="font-display text-white text-xs font-bold tracking-widest">LIVE</span>
+    </div>
+    <div class="ticker-wrap flex-1 h-full flex items-center">
+        <div class="ticker-track text-white text-xs font-display tracking-wide gap-0">
+            {% for score in live_scores %}
+            <span class="flex items-center gap-2 px-5 border-r border-gray-700 h-9">
+                {% if score.status == 'live' %}<span class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>
+                {% elif score.status == 'ht' %}<span class="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse"></span>
+                {% else %}<span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>{% endif %}
+                {{ score.display }}
+            </span>
+            {% empty %}
+            <span class="flex items-center gap-2 px-5 border-r border-gray-700 h-9"><span class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>VIE 1 – 0 THA <span class="text-gray-400">(HT)</span></span>
+            <span class="flex items-center gap-2 px-5 border-r border-gray-700 h-9"><span class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>ESP 3 – 2 BRA <span class="text-gray-400">(67')</span></span>
+            <span class="flex items-center gap-2 px-5 border-r border-gray-700 h-9"><span class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>VIE 1 – 0 THA <span class="text-gray-400">(HT)</span></span>
+            <span class="flex items-center gap-2 px-5 border-r border-gray-700 h-9"><span class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>ESP 3 – 2 BRA <span class="text-gray-400">(67')</span></span>
+            {% endfor %}
         </div>
-    </header>
+    </div>
+</div>
 
-    <section class="bg-[#222] text-white py-2 text-xs md:text-sm">
-        <div class="max-w-7xl mx-auto px-4 flex space-x-6 overflow-x-auto whitespace-nowrap">
-            <div class="flex items-center space-x-2 bg-gray-800 px-3 py-1 rounded">
-                <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
-                <span>ENG 2 - 1 GER (FT)</span>
-            </div>
-            <div class="flex items-center space-x-2 bg-gray-800 px-3 py-1 rounded">
-                <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                <span>FRA 0 - 0 ITA (30')</span>
-            </div>
-            <div class="flex items-center space-x-2 bg-gray-800 px-3 py-1 rounded">
-                <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
-                <span>VIE 1 - 0 THA (HT)</span>
-            </div>
-        </div>
-    </section>
+<main class="max-w-7xl mx-auto px-4 py-6">
 
-    <main class="max-w-7xl mx-auto px-4 py-6">
-        
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 border-b border-gray-200 pb-6 mb-6">
-            
-            <div class="lg:col-span-2">
-                {% if posts %}
-                    <article class="group cursor-pointer">
-                        <div class="overflow-hidden rounded bg-gray-100 aspect-video mb-4">
-                            {% if posts.0.image_file %}
-                                <img src="{{ posts.0.image_file.url }}" alt="Tin nổi bật" class="w-full h-full object-cover">
-                            {% elif posts.0.image_url %}
-                                <img src="{{ posts.0.image_url }}" alt="Tin nổi bật" class="w-full h-full object-cover">
-                            {% else %}
-                                <img src="https://via.placeholder.com/800x450" alt="Tin nổi bật" class="w-full h-full object-cover">
-                            {% endif %}
-                        </div>
-                        <h1 class="text-2xl md:text-3xl font-bold text-gray-900 leading-tight group-hover:text-[#9f224e] transition">
-                            {{ posts.0.title }}
-                        </h1>
-                        <p class="text-gray-600 mt-2 text-[15px] leading-relaxed">
-                            {{ posts.0.content|truncatewords:35 }}
-                        </p>
-                    </article>
+    <div class="sec-line flex items-center justify-between pb-2 mb-4">
+        <h2 class="font-display text-lg font-bold tracking-widest uppercase text-[#111]">
+            <span class="inline-block w-1.5 h-5 bg-[#c0152a] mr-2 align-middle rounded-sm"></span>Mới nhất
+        </h2>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-px bg-gray-300 border border-gray-300 mb-8">
+        {% if posts %}
+        {% with first_post=posts.0 %}
+        <a href="{{ first_post.get_absolute_url }}" class="lg:col-span-2 bg-white group block">
+            <div class="zoom-img aspect-video w-full bg-gray-200">
+                {% if first_post.image_file %}
+                    <img src="{{ first_post.image_file.url }}" alt="{{ first_post.title }}" class="w-full h-full object-cover">
+                {% elif first_post.image_url %}
+                    <img src="{{ first_post.image_url }}" alt="{{ first_post.title }}" class="w-full h-full object-cover">
+                {% else %}
+                    <img src="https://placehold.co/800x450/ccc/888?text=No+Image" alt="No image available" class="w-full h-full object-cover">
                 {% endif %}
             </div>
+            <div class="p-4">
+                {% if first_post.category %}
+                <span class="font-display text-[#c0152a] text-[11px] font-bold tracking-widest uppercase">{{ first_post.category.name }}</span>
+                {% endif %}
+                <h1 class="font-display text-xl md:text-2xl font-bold leading-snug text-[#111] group-hover:text-[#c0152a] transition-colors mt-1">
+                    {{ first_post.title }}
+                </h1>
+                <p class="text-gray-500 text-sm leading-relaxed mt-2 line-clamp-2">
+                    {{ first_post.content|truncatewords:30 }}
+                </p>
+                <p class="text-gray-400 text-xs font-display tracking-wide mt-3">
+                    {{ first_post.created_at|date:"d/m/Y • H:i" }}
+                </p>
+            </div>
+        </a>
+        {% endwith %}
+        {% endif %}
 
-            <aside class="space-y-4 border-t lg:border-t-0 lg:border-l lg:pl-6 border-gray-200 pt-4 lg:pt-0">
-                <h2 class="text-lg font-bold text-[#9f224e] uppercase tracking-wide border-b-2 border-[#9f224e] pb-1 mb-3">
-                    Tin mới nhất
-                </h2>
-                <div class="divide-y divide-gray-200 max-h-[450px] overflow-y-auto pr-2">
-                    {% for post in posts %}
-                        <article class="flex space-x-3 py-3 first:pt-0 group cursor-pointer">
-                            <div class="w-24 h-16 flex-shrink-0 overflow-hidden rounded bg-gray-100">
-                                {% if post.image_file %}
-                                    <img src="{{ post.image_file.url }}" alt="thumb" class="w-full h-full object-cover">
-                                {% elif post.image_url %}
-                                    <img src="{{ post.image_url }}" alt="thumb" class="w-full h-full object-cover">
-                                {% else %}
-                                    <img src="https://via.placeholder.com/120x80" alt="thumb" class="w-full h-full object-cover">
-                                {% endif %}
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <h3 class="text-sm font-semibold text-gray-900 leading-snug group-hover:text-[#9f224e] transition line-clamp-2">
-                                    {{ post.title }}
-                                </h3>
-                                <p class="text-xs text-gray-500 mt-1">
-                                    {{ post.content|truncatewords:8 }}
-                                </p>
-                            </div>
-                        </article>
-                    {% endfor %}
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 lg:grid-rows-2 gap-px bg-gray-300">
+            {% for post in posts|slice:"1:5" %}
+            <a href="{{ post.get_absolute_url }}" class="bg-white group flex lg:flex-row gap-0 hover:bg-gray-50 transition-colors">
+                <div class="zoom-img w-full lg:w-32 lg:shrink-0 aspect-video lg:aspect-auto lg:h-full bg-gray-200">
+                    {% if post.image_file %}
+                        <img src="{{ post.image_file.url }}" alt="{{ post.title }}" class="w-full h-full object-cover">
+                    {% elif post.image_url %}
+                        <img src="{{ post.image_url }}" alt="{{ post.title }}" class="w-full h-full object-cover">
+                    {% else %}
+                        <img src="https://placehold.co/200x130/ccc/888?text=..." alt="Placeholder image" class="w-full h-full object-cover">
+                    {% endif %}
                 </div>
-            </aside>
+                <div class="p-3 flex flex-col justify-center">
+                    {% if post.category %}
+                    <span class="font-display text-[#c0152a] text-[10px] font-bold tracking-widest uppercase">{{ post.category.name }}</span>
+                    {% endif %}
+                    <h3 class="font-display text-sm font-bold leading-snug text-[#111] group-hover:text-[#c0152a] transition-colors line-clamp-2 mt-0.5">
+                        {{ post.title }}
+                    </h3>
+                    <p class="text-gray-400 text-[11px] mt-1">{{ post.created_at|date:"d/m/Y" }}</p>
+                </div>
+            </a>
+            {% endfor %}
         </div>
+    </div>
 
-        <section class="mt-8">
-            <h2 class="text-xl font-bold text-gray-900 mb-6 flex items-center">
-                <span class="w-3 h-6 bg-[#9f224e] inline-block mr-2 rounded-sm"></span>
-                Tin tức tiêu điểm khác
-            </h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {% for post in posts %}
-                    <article class="bg-white rounded border border-gray-200 shadow-sm hover:shadow-md transition overflow-hidden flex flex-col justify-between">
-                        <div>
-                            <div class="aspect-video w-full bg-gray-100 overflow-hidden">
-                                {% if post.image_file %}
-                                    <img src="{{ post.image_file.url }}" alt="thumb" class="w-full h-full object-cover">
-                                {% elif post.image_url %}
-                                    <img src="{{ post.image_url }}" alt="thumb" class="w-full h-full object-cover">
-                                {% else %}
-                                    <img src="https://via.placeholder.com/400x250" alt="thumb" class="w-full h-full object-cover">
-                                {% endif %}
-                            </div>
-                            <div class="p-4">
-                                <h3 class="font-bold text-base text-gray-900 hover:text-[#9f224e] transition line-clamp-2 mb-2">
-                                    {{ post.title }}
-                                </h3>
-                                <p class="text-sm text-gray-600 line-clamp-3">
-                                    {{ post.content|truncatewords:15 }}
-                                </p>
-                            </div>
-                        </div>
-                        <div class="p-4 pt-0 border-t border-gray-100 mt-auto flex justify-between items-center text-xs text-gray-400">
-                            <span>Thể thao 24h</span>
-                            <a href="#" class="text-[#9f224e] font-medium hover:underline">Xem chi tiết →</a>
-                        </div>
-                    </article>
-                {% endfor %}
+    <div class="sec-line flex items-center justify-between pb-2 mb-4">
+        <h2 class="font-display text-lg font-bold tracking-widest uppercase text-[#111]">
+            <span class="inline-block w-1.5 h-5 bg-[#c0152a] mr-2 align-middle rounded-sm"></span>Thịnh hành
+        </h2>
+        <a href="#" class="font-display text-xs text-[#c0152a] hover:underline tracking-wide uppercase">Xem tất cả →</a>
+    </div>
+
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+        {% for post in posts|slice:"5:9" %}
+        <a href="{{ post.get_absolute_url }}" class="group block bg-white border border-gray-200 hover:border-[#c0152a] transition-colors overflow-hidden shadow-sm">
+            <div class="zoom-img aspect-video bg-gray-200">
+                {% if post.image_file %}
+                    <img src="{{ post.image_file.url }}" alt="{{ post.title }}" class="w-full h-full object-cover">
+                {% elif post.image_url %}
+                    <img src="{{ post.image_url }}" alt="{{ post.title }}" class="w-full h-full object-cover">
+                {% else %}
+                    <img src="https://placehold.co/400x250/ccc/888?text=..." alt="Placeholder image" class="w-full h-full object-cover">
+                {% endif %}
             </div>
-        </section>
+            <div class="p-3">
+                {% if post.category %}
+                <span class="font-display text-[#c0152a] text-[10px] font-bold tracking-widest uppercase">{{ post.category.name }}</span>
+                {% endif %}
+                <h3 class="font-display text-sm font-bold text-[#111] group-hover:text-[#c0152a] transition-colors leading-snug line-clamp-2 mt-1">
+                    {{ post.title }}
+                </h3>
+                <p class="text-gray-400 text-[11px] mt-2">{{ post.created_at|date:"d/m/Y" }}</p>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
 
-    </main>
+    <div class="bg-[#0f0f0f] px-8 py-10 mb-10 relative overflow-hidden">
+        <div class="absolute inset-0 opacity-[0.04]" style="background-image:repeating-linear-gradient(45deg,#fff 0,#fff 1px,transparent 0,transparent 50%);background-size:14px 14px;"></div>
+        <p class="font-display text-gray-500 text-xs tracking-widest uppercase mb-3 relative">Chuyên mục</p>
+        <p class="font-display text-white text-3xl md:text-4xl font-bold leading-tight relative">
+            <a href="#" class="hover:text-[#c0152a] transition-colors">Đánh giá.</a>
+            <a href="#" class="hover:text-[#c0152a] transition-colors"> Tin tức.</a>
+            <a href="#" class="hover:text-[#c0152a] transition-colors"> Video.</a>
+            <a href="#" class="hover:text-[#c0152a] transition-colors"> Deals.</a><br>
+            <a href="#" class="hover:text-[#c0152a] transition-colors">Lịch thi đấu.</a>
+            <a href="#" class="hover:text-[#c0152a] transition-colors"> Bình luận.</a>
+            <a href="#" class="hover:text-[#c0152a] transition-colors"> Podcast.</a>
+        </p>
+    </div>
 
-    <footer class="bg-[#222] text-gray-400 text-sm mt-12 py-8 border-t-4 border-[#9f224e]">
-        <div class="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
+    <div class="sec-line flex items-center justify-between pb-2 mb-4">
+        <h2 class="font-display text-lg font-bold tracking-widest uppercase text-[#111]">
+            <span class="inline-block w-1.5 h-5 bg-[#c0152a] mr-2 align-middle rounded-sm"></span>Tin tức tiêu điểm
+        </h2>
+        <a href="#" class="font-display text-xs text-[#c0152a] hover:underline tracking-wide uppercase">Xem tất cả →</a>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mb-10">
+        {% for post in posts|slice:"9:" %}
+        <article class="bg-white border border-gray-200 shadow-sm hover:shadow-md hover:border-[#c0152a] transition-all overflow-hidden flex flex-col group">
+            <a href="{{ post.get_absolute_url }}" class="block zoom-img aspect-video bg-gray-200">
+                {% if post.image_file %}
+                    <img src="{{ post.image_file.url }}" alt="{{ post.title }}" class="w-full h-full object-cover">
+                {% elif post.image_url %}
+                    <img src="{{ post.image_url }}" alt="{{ post.title }}" class="w-full h-full object-cover">
+                {% else %}
+                    <img src="https://placehold.co/600x338/ccc/888?text=No+Image" alt="No image available" class="w-full h-full object-cover">
+                {% endif %}
+            </a>
+            <div class="p-4 flex flex-col flex-1">
+                <div class="flex items-center gap-2 mb-2">
+                    {% if post.category %}
+                    <span class="font-display bg-[#c0152a] text-white px-2 py-0.5 text-[10px] font-bold tracking-widest uppercase">{{ post.category.name }}</span>
+                    {% endif %}
+                    <span class="text-gray-400 text-[11px]">{{ post.created_at|date:"d/m/Y" }}</span>
+                </div>
+                <a href="{{ post.get_absolute_url }}">
+                    <h3 class="font-display text-base font-bold text-[#111] group-hover:text-[#c0152a] transition-colors leading-snug line-clamp-2 mb-2">
+                        {{ post.title }}
+                    </h3>
+                </a>
+                <p class="text-gray-500 text-sm leading-relaxed line-clamp-2 flex-1">
+                    {{ post.content|truncatewords:18 }}
+                </p>
+                <div class="mt-3 pt-3 border-t border-gray-100 flex justify-between items-center">
+                    <span class="text-gray-400 text-xs">Thể thao 24h</span>
+                    <a href="{{ post.get_absolute_url }}" class="font-display text-xs text-[#c0152a] hover:underline tracking-wide">Xem chi tiết →</a>
+                </div>
+            </div>
+        </article>
+        {% empty %}
+        <div class="col-span-3 text-center py-20 text-gray-400 font-display tracking-wide text-sm">
+            Chưa có bài viết nào · Hãy thêm bài viết từ Admin
+        </div>
+        {% endfor %}
+    </div>
+
+</main>
+
+<footer class="bg-[#0f0f0f] border-t-4 border-[#c0152a] py-10">
+    <div class="max-w-7xl mx-auto px-4">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
             <div>
-                <p class="font-bold text-white text-lg">THENH<span class="text-[#9f224e]">DEPTRAI</span></p>
-                <p class="text-xs mt-1 text-gray-500">&copy; Thiết kế bởi Thenh Phóng Viên 24/24.</p>
+                <p class="font-display text-white text-2xl font-bold tracking-widest">
+                    THENH<span class="text-[#c0152a]">DEPTRAI</span>
+                </p>
+                <p class="text-gray-500 text-xs mt-1">Tin tức thể thao 24/7 · Cập nhật nhanh nhất</p>
             </div>
+            <nav class="flex flex-wrap gap-4">
+                <a href="#" class="font-display text-gray-400 hover:text-white text-xs tracking-wide uppercase transition-colors">⚽ Bóng đá</a>
+                <a href="#" class="font-display text-gray-400 hover:text-white text-xs tracking-wide uppercase transition-colors">🎾 Tennis</a>
+                <a href="#" class="font-display text-gray-400 hover:text-white text-xs tracking-wide uppercase transition-colors">🏀 NBA</a>
+                <a href="#" class="font-display text-gray-400 hover:text-white text-xs tracking-wide uppercase transition-colors">📅 Lịch thi đấu</a>
+            </nav>
+            <form class="flex gap-2" onsubmit="return false;">
+                <input type="email" placeholder="Email của bạn..." class="bg-[#1a1a1a] border border-gray-700 text-white text-xs px-4 py-2 w-52 focus:outline-none focus:border-[#c0152a]">
+                <button class="bg-[#c0152a] hover:bg-[#96101f] text-white font-display text-xs px-4 py-2 tracking-wide transition-colors uppercase font-bold">
+                    Đăng ký
+                </button>
+            </form>
         </div>
-    </footer>
+        <div class="border-t border-gray-800 mt-8 pt-6 text-center">
+            <p class="text-gray-600 text-xs">
+                &copy; {% now "Y" %} THENHDEPTRAI · Thiết kế bởi <span class="text-[#c0152a]">Thenh Phóng Viên 24/24</span>
+            </p>
+        </div>
+    </div>
+</footer>
 
 </body>
 </html>
