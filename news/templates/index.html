@@ -87,10 +87,11 @@
                 {{ score.display }}
             </span>
             {% empty %}
-            <span class="flex items-center gap-2 px-5 border-r border-gray-700 h-9"><span class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>VIE 1 – 0 THA <span class="text-gray-400">(HT)</span></span>
+            <span class="flex items-center gap-2 px-5 border-r border-gray-700 h-9"><span class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>ENG 2 – 1 GER <span class="text-gray-400">(FT)</span></span>
+            <span class="flex items-center gap-2 px-5 border-r border-gray-700 h-9"><span class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>FRA 0 – 0 ITA <span class="text-gray-400">(30')</span></span>
+            <span class="flex items-center gap-2 px-5 border-r border-gray-700 h-9"><span class="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse"></span>VIE 1 – 0 THA <span class="text-gray-400">(HT)</span></span>
             <span class="flex items-center gap-2 px-5 border-r border-gray-700 h-9"><span class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>ESP 3 – 2 BRA <span class="text-gray-400">(67')</span></span>
-            <span class="flex items-center gap-2 px-5 border-r border-gray-700 h-9"><span class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>VIE 1 – 0 THA <span class="text-gray-400">(HT)</span></span>
-            <span class="flex items-center gap-2 px-5 border-r border-gray-700 h-9"><span class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>ESP 3 – 2 BRA <span class="text-gray-400">(67')</span></span>
+            <span class="flex items-center gap-2 px-5 border-r border-gray-700 h-9"><span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>ARG 1 – 1 POR <span class="text-gray-400">(FT)</span></span>
             {% endfor %}
         </div>
     </div>
@@ -104,62 +105,69 @@
         </h2>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-px bg-gray-300 border border-gray-300 mb-8">
-        {% if posts %}
-        {% with first_post=posts.0 %}
-        <a href="{{ first_post.get_absolute_url }}" class="lg:col-span-2 bg-white group block">
-            <div class="zoom-img aspect-video w-full bg-gray-200">
-                {% if first_post.image_file %}
-                    <img src="{{ first_post.image_file.url }}" alt="{{ first_post.title }}" class="w-full h-full object-cover">
-                {% elif first_post.image_url %}
-                    <img src="{{ first_post.image_url }}" alt="{{ first_post.title }}" class="w-full h-full object-cover">
-                {% else %}
-                    <img src="https://placehold.co/800x450/ccc/888?text=No+Image" alt="No image available" class="w-full h-full object-cover">
-                {% endif %}
-            </div>
-            <div class="p-4">
-                {% if first_post.category %}
-                <span class="font-display text-[#c0152a] text-[11px] font-bold tracking-widest uppercase">{{ first_post.category.name }}</span>
-                {% endif %}
-                <h1 class="font-display text-xl md:text-2xl font-bold leading-snug text-[#111] group-hover:text-[#c0152a] transition-colors mt-1">
-                    {{ first_post.title }}
-                </h1>
-                <p class="text-gray-500 text-sm leading-relaxed mt-2 line-clamp-2">
-                    {{ first_post.content|truncatewords:30 }}
-                </p>
-                <p class="text-gray-400 text-xs font-display tracking-wide mt-3">
-                    {{ first_post.created_at|date:"d/m/Y • H:i" }}
-                </p>
-            </div>
-        </a>
-        {% endwith %}
-        {% endif %}
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 lg:grid-rows-2 gap-px bg-gray-300">
+        <div class="lg:col-span-2">
+            {% if posts %}
+            {% with first_post=posts.0 %}
+            <a href="{{ first_post.get_absolute_url }}" class="bg-white group block h-full border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+                <div class="zoom-img aspect-video w-full bg-gray-200">
+                    {% if first_post.image_file %}
+                        <img src="{{ first_post.image_file.url }}" alt="{{ first_post.title }}" class="w-full h-full object-cover">
+                    {% elif first_post.image_url %}
+                        <img src="{{ first_post.image_url }}" alt="{{ first_post.title }}" class="w-full h-full object-cover">
+                    {% else %}
+                        <img src="https://placehold.co/800x450/ccc/888?text=No+Image" alt="No image" class="w-full h-full object-cover">
+                    {% endif %}
+                </div>
+                <div class="p-4">
+                    {% if first_post.category %}
+                    <span class="font-display text-[#c0152a] text-[11px] font-bold tracking-widest uppercase">{{ first_post.category.name }}</span>
+                    {% endif %}
+                    <h1 class="font-display text-xl md:text-2xl font-bold leading-snug text-[#111] group-hover:text-[#c0152a] transition-colors mt-1">
+                        {{ first_post.title }}
+                    </h1>
+                    <p class="text-gray-500 text-sm leading-relaxed mt-2 line-clamp-2">
+                        {{ first_post.content|truncatewords:30 }}
+                    </p>
+                    <p class="text-gray-400 text-xs font-display tracking-wide mt-3">
+                        {{ first_post.created_at|date:"d/m/Y • H:i" }}
+                    </p>
+                </div>
+            </a>
+            {% endwith %}
+            {% endif %}
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {% for post in posts|slice:"1:5" %}
-            <a href="{{ post.get_absolute_url }}" class="bg-white group flex lg:flex-row gap-0 hover:bg-gray-50 transition-colors">
-                <div class="zoom-img w-full lg:w-32 lg:shrink-0 aspect-video lg:aspect-auto lg:h-full bg-gray-200">
+            <a href="{{ post.get_absolute_url }}" class="bg-white border border-gray-200 shadow-sm group flex flex-col justify-between hover:shadow-md transition-all h-full">
+                <div class="zoom-img w-full aspect-video bg-gray-200 shrink-0">
                     {% if post.image_file %}
                         <img src="{{ post.image_file.url }}" alt="{{ post.title }}" class="w-full h-full object-cover">
                     {% elif post.image_url %}
                         <img src="{{ post.image_url }}" alt="{{ post.title }}" class="w-full h-full object-cover">
                     {% else %}
-                        <img src="https://placehold.co/200x130/ccc/888?text=..." alt="Placeholder image" class="w-full h-full object-cover">
+                        <img src="https://placehold.co/300x200/ccc/888?text=..." alt="No Image" class="w-full h-full object-cover">
                     {% endif %}
                 </div>
-                <div class="p-3 flex flex-col justify-center">
-                    {% if post.category %}
-                    <span class="font-display text-[#c0152a] text-[10px] font-bold tracking-widest uppercase">{{ post.category.name }}</span>
-                    {% endif %}
-                    <h3 class="font-display text-sm font-bold leading-snug text-[#111] group-hover:text-[#c0152a] transition-colors line-clamp-2 mt-0.5">
-                        {{ post.title }}
-                    </h3>
-                    <p class="text-gray-400 text-[11px] mt-1">{{ post.created_at|date:"d/m/Y" }}</p>
+                <div class="p-3 flex-1 flex flex-col justify-between">
+                    <div>
+                        {% if post.category %}
+                        <span class="font-display text-[#c0152a] text-[10px] font-bold tracking-widest uppercase mb-1 block">{{ post.category.name }}</span>
+                        {% endif %}
+                        <h3 class="font-display text-xs md:text-sm font-bold leading-snug text-[#111] group-hover:text-[#c0152a] transition-colors line-clamp-2">
+                            {{ post.title }}
+                        </h3>
+                    </div>
+                    <p class="text-gray-400 text-[10px] mt-2 pt-2 border-t border-gray-50">{{ post.created_at|date:"d/m/Y" }}</p>
                 </div>
             </a>
             {% endfor %}
         </div>
+
     </div>
+
 
     <div class="sec-line flex items-center justify-between pb-2 mb-4">
         <h2 class="font-display text-lg font-bold tracking-widest uppercase text-[#111]">
@@ -177,7 +185,7 @@
                 {% elif post.image_url %}
                     <img src="{{ post.image_url }}" alt="{{ post.title }}" class="w-full h-full object-cover">
                 {% else %}
-                    <img src="https://placehold.co/400x250/ccc/888?text=..." alt="Placeholder image" class="w-full h-full object-cover">
+                    <img src="https://placehold.co/400x250/ccc/888?text=..." alt="No Image" class="w-full h-full object-cover">
                 {% endif %}
             </div>
             <div class="p-3">
@@ -193,8 +201,10 @@
         {% endfor %}
     </div>
 
+
     <div class="bg-[#0f0f0f] px-8 py-10 mb-10 relative overflow-hidden">
-        <div class="absolute inset-0 opacity-[0.04]" style="background-image:repeating-linear-gradient(45deg,#fff 0,#fff 1px,transparent 0,transparent 50%);background-size:14px 14px;"></div>
+        <div class="absolute inset-0 opacity-[0.04]"
+             style="background-image:repeating-linear-gradient(45deg,#fff 0,#fff 1px,transparent 0,transparent 50%);background-size:14px 14px;"></div>
         <p class="font-display text-gray-500 text-xs tracking-widest uppercase mb-3 relative">Chuyên mục</p>
         <p class="font-display text-white text-3xl md:text-4xl font-bold leading-tight relative">
             <a href="#" class="hover:text-[#c0152a] transition-colors">Đánh giá.</a>
@@ -206,6 +216,7 @@
             <a href="#" class="hover:text-[#c0152a] transition-colors"> Podcast.</a>
         </p>
     </div>
+
 
     <div class="sec-line flex items-center justify-between pb-2 mb-4">
         <h2 class="font-display text-lg font-bold tracking-widest uppercase text-[#111]">
@@ -223,7 +234,7 @@
                 {% elif post.image_url %}
                     <img src="{{ post.image_url }}" alt="{{ post.title }}" class="w-full h-full object-cover">
                 {% else %}
-                    <img src="https://placehold.co/600x338/ccc/888?text=No+Image" alt="No image available" class="w-full h-full object-cover">
+                    <img src="https://placehold.co/600x338/ccc/888?text=No+Image" alt="No image" class="w-full h-full object-cover">
                 {% endif %}
             </a>
             <div class="p-4 flex flex-col flex-1">
@@ -272,7 +283,8 @@
                 <a href="#" class="font-display text-gray-400 hover:text-white text-xs tracking-wide uppercase transition-colors">📅 Lịch thi đấu</a>
             </nav>
             <form class="flex gap-2" onsubmit="return false;">
-                <input type="email" placeholder="Email của bạn..." class="bg-[#1a1a1a] border border-gray-700 text-white text-xs px-4 py-2 w-52 focus:outline-none focus:border-[#c0152a]">
+                <input type="email" placeholder="Email của bạn..."
+                    class="bg-[#1a1a1a] border border-gray-700 text-white text-xs px-4 py-2 w-52 focus:outline-none focus:border-[#c0152a]">
                 <button class="bg-[#c0152a] hover:bg-[#96101f] text-white font-display text-xs px-4 py-2 tracking-wide transition-colors uppercase font-bold">
                     Đăng ký
                 </button>
