@@ -9,7 +9,7 @@ from django.core.files.base import ContentFile
 from .models import Post
 
 # =====================================================================
-# 1. CÁC HÀM XỬ LÝ VIEW GIAO DIỆN WEB (Bảo lưu toàn bộ logic cũ của bạn)
+# 1. CÁC HÀM XỬ LÝ VIEW GIAO DIỆN WEB
 # =====================================================================
 
 def home(request):
@@ -45,7 +45,7 @@ def post_detail(request, pk):
 
 
 # =====================================================================
-# 2. BỘ NÃO XỬ LÝ WEBHOOK TELEGRAM + GEMINI AI TỰ ĐỘNG ĐĂNG BÀI
+# 2. BỘ NÃO XỬ LÝ WEBHOOK TELEGRAM + GEMINI AI (ĐĂNG BÀI + TƯƠNG TÁC CHAT)
 # =====================================================================
 
 # Đọc cấu hình bảo mật từ file .env hoặc cấu hình Render Environment
@@ -72,7 +72,12 @@ def telegram_ai_webhook(request):
             if YOUR_TELEGRAM_CHAT_ID and chat_id != str(YOUR_TELEGRAM_CHAT_ID).strip():
                 return HttpResponse("Unauthorized", status=403)
 
-            # Kiểm tra xem tin nhắn gửi đến có phải là Ảnh kèm dòng chữ chú thích (Caption) không
+            # Khởi tạo Model Gemini dùng chung (Ép đường dẫn tuyệt đối ổn định)
+            model = genai.GenerativeModel('models/gemini-1.5-flash')
+
+            # -----------------------------------------------------------------
+            # NHÁNH 1: GỬI ẢNH KÈM CHỮ -> TỰ ĐỘNG ĐĂNG BÀI LÊN WEB
+            # -----------------------------------------------------------------
             if "photo" in message and "caption" in message:
                 keywords = message["caption"] 
                 
@@ -112,7 +117,6 @@ def telegram_ai_webhook(request):
                     """
                     
                     # Gọi model Gemini để phân tích ảnh kết hợp chữ
-                    model = genai.GenerativeModel('models/gemini-1.5-flash')
                     ai_response = model.generate_content([prompt, image_part])
                     
                     try:
@@ -156,6 +160,27 @@ def telegram_ai_webhook(request):
                             "chat_id": chat_id,
                             "text": f"❌ Lỗi cấu trúc bài viết từ AI. Vui lòng gửi lại ảnh với từ khóa cụ thể hơn."
                         })
+
+            # -----------------------------------------------------------------
+            # NHÁNH 2 (MỚI): CHỈ NHẮN CHỮ -> CHATBOT TƯƠNG TÁC, HỎI ĐÁP VỚI GEMINI
+            # -----------------------------------------------------------------
+            elif "text" in message:
+                user_text = message["text"]
+                
+                # Bỏ qua không xử lý lệnh kích hoạt /start mặc định của Telegram
+                if user_text.strip() != "/start":
+                    # Gửi câu hỏi chat của bạn sang cho Gemini AI trả lời ngắn gọn, tự nhiên
+                    ai_chat_response = model.generate_content(
+                        f"Bạn là một trợ lý thông minh am hiểu thể thao. Hãy trả lời câu hỏi sau của người dùng bằng tiếng Việt một cách tự nhiên, ngắn gọn: {user_text}"
+                    )
+                    bot_reply_text = ai_chat_response.text
+                    
+                    # Gửi câu trả lời của AI ngược lại về khung chat Telegram
+                    chat_url = f"[https://api.telegram.org/bot](https://api.telegram.org/bot){TELEGRAM_BOT_TOKEN}/sendMessage"
+                    requests.post(chat_url, json={
+                        "chat_id": chat_id,
+                        "text": bot_reply_text
+                    })
                     
             return HttpResponse("OK", status=200)
         except Exception as e:
