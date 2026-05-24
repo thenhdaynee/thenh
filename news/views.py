@@ -93,7 +93,7 @@ def telegram_ai_webhook(request):
                     ai_response = client.models.generate_content(
                         model="gemini-2.0-flash",
                         contents=[
-                            types.Part.from_text(prompt),
+                            prompt,
                             types.Part.from_bytes(data=image_data, mime_type="image/jpeg")
                         ]
                     )
