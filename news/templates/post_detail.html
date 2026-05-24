@@ -1,0 +1,63 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ post.title }} - THENHDEPTRAI</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Source+Serif+4:ital,wght=0,300;0,400;0,600;1,400&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Source Serif 4', Georgia, serif; }
+        .font-display { font-family: 'Oswald', sans-serif; }
+    </style>
+</head>
+<body class="bg-[#f0f0f0] text-[#111]">
+
+<header class="bg-[#0f0f0f] shadow-lg">
+    <div class="max-w-4xl mx-auto px-4 h-14 flex items-center justify-between">
+        <a href="/" class="font-display text-2xl font-bold tracking-widest text-white">
+            THENH<span class="text-[#c0152a]">DEPTRAI</span>
+        </a>
+        <a href="/" class="font-display text-xs text-gray-400 hover:text-white uppercase tracking-wide">← Quay lại trang chủ</a>
+    </div>
+</header>
+
+<main class="max-w-4xl mx-auto px-4 py-8 bg-white my-6 shadow-sm border border-gray-200">
+    <article>
+        <div class="flex items-center gap-3 mb-4">
+            {% if post.category %}
+            <span class="font-display bg-[#c0152a] text-white px-2 py-0.5 text-xs font-bold uppercase tracking-wider">{{ post.category.name }}</span>
+            {% endif %}
+            <span class="text-gray-500 text-sm">{{ post.created_at|date:"d/m/Y • H:i" }}</span>
+            <span class="text-gray-400 text-sm ml-auto font-display">👁 {{ post.views_count }} lượt xem</span>
+        </div>
+
+        <h1 class="font-display text-2xl md:text-4xl font-bold leading-tight text-[#111] mb-6">
+            {{ post.title }}
+        </h1>
+
+        <div class="w-full aspect-video bg-gray-100 mb-6 overflow-hidden rounded-sm">
+            {% if post.image_file %}
+                <img src="{{ post.image_file.url }}" alt="{{ post.title }}" class="w-full h-full object-cover">
+            {% elif post.image_url %}
+                <img src="{{ post.image_url }}" alt="{{ post.title }}" class="w-full h-full object-cover">
+            {% else %}
+                <img src="https://placehold.co/800x450/ccc/888?text=No+Image" alt="No image" class="w-full h-full object-cover">
+            {% endif %}
+        </div>
+
+        <div class="text-[#222] text-lg leading-relaxed space-y-4 whitespace-pre-line">
+            {{ post.content }}
+        </div>
+    </article>
+</main>
+
+<footer class="bg-[#0f0f0f] py-6 border-t-4 border-[#c0152a] text-center">
+    <p class="text-gray-500 text-xs">&copy; {% now "Y" %} THENHDEPTRAI · Bài viết chi tiết</p>
+</footer>
+
+</body>
+</html>
