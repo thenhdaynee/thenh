@@ -34,14 +34,14 @@ def post_detail(request, pk):
 
 
 # =====================================================================
-# 2. BỘ NÃO XỬ LÝ WEBHOOK TELEGRAM + GEMINI AI
+# 2. BỘ NÃO XỬ LÝ WEBHOOK TELEGRAM + GEMINI AI (BẢN TỐI ƯU 2.0-FLASH-LITE)
 # =====================================================================
 
 GEMINI_KEY = os.environ.get("GEMINI_API_KEY")
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 YOUR_TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 
-# Khởi tạo Gemini client mới
+# Khởi tạo Gemini client theo thư viện mới
 client = genai.Client(api_key=GEMINI_KEY) if GEMINI_KEY else None
 
 @csrf_exempt
@@ -57,6 +57,10 @@ def telegram_ai_webhook(request):
             
             if YOUR_TELEGRAM_CHAT_ID and chat_id != str(YOUR_TELEGRAM_CHAT_ID).strip():
                 return HttpResponse("Unauthorized", status=403)
+
+            # Nếu không có client Gemini thì bỏ qua để tránh sập app
+            if not client:
+                return HttpResponse("OK", status=200)
 
             # -----------------------------------------------------------------
             # NHÁNH 1: GỬI ẢNH KÈM CHỮ -> TỰ ĐỘNG ĐĂNG BÀI LÊN WEB
@@ -89,9 +93,9 @@ def telegram_ai_webhook(request):
                     }}
                     """
                     
-                    # ĐÃ ĐỔI SANG MODEL 1.5-FLASH ĐỂ TRÁNH LỖI HẾT HẠN MỨC QUOTA (429)
+                    # TỐI ƯU: Sử dụng gemini-2.0-flash-lite tốc độ cao, hạn mức rộng
                     ai_response = client.models.generate_content(
-                        model="gemini-1.5-flash",
+                        model="gemini-2.0-flash-lite",
                         contents=[
                             prompt,
                             types.Part.from_bytes(data=image_data, mime_type="image/jpeg")
@@ -134,15 +138,15 @@ def telegram_ai_webhook(request):
                         })
 
             # -----------------------------------------------------------------
-            # NHÁNH 2: CHỈ NHẮN CHỮ -> CHATBOT TƯƠNG TÁC VỚI GEMINI
+            # NHÁNH 2: CHỈ NHẮN CHỮ -> CHATBOT TƯƠNG TÁC GIAO TIẾP
             # -----------------------------------------------------------------
             elif "text" in message:
                 user_text = message["text"]
                 
                 if user_text.strip() != "/start":
-                    # ĐÃ ĐỔI SANG MODEL 1.5-FLASH
+                    # TỐI ƯU: Sử dụng gemini-2.0-flash-lite cho phản hồi chat mượt mà
                     ai_chat_response = client.models.generate_content(
-                        model="gemini-1.5-flash",
+                        model="gemini-2.0-flash-lite",
                         contents=f"Bạn là một trợ lý thông minh am hiểu thể thao. Hãy trả lời câu hỏi sau của người dùng bằng tiếng Việt một cách tự nhiên, ngắn gọn: {user_text}"
                     )
                     bot_reply_text = ai_chat_response.text
@@ -156,6 +160,7 @@ def telegram_ai_webhook(request):
             return HttpResponse("OK", status=200)
         except Exception as e:
             print("Lỗi hệ thống Webhook:", e)
+            # Luôn trả về 200 để bẻ gãy vòng lặp tự động gửi lại tin nhắn lỗi của Telegram
             return HttpResponse("OK", status=200)
             
     return HttpResponse("Method not allowed", status=405)
