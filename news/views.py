@@ -155,6 +155,6 @@ def telegram_ai_webhook(request):
             return HttpResponse("OK", status=200)
         except Exception as e:
             print("Lỗi hệ thống Webhook:", e)
-            return HttpResponse("Error", status=500)
+            return HttpResponse("OK", status=200)
             
     return HttpResponse("Method not allowed", status=405)
