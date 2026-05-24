@@ -58,13 +58,15 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'sport_news_web.wsgi.application'
 
-if os.environ.get('DATABASE_URL'):
+# Kiểm tra nếu đang chạy TRÊN SERVER RENDER
+if os.environ.get('RENDER'):
     DATABASES = {
         'default': dj_database_url.config(
             default=os.environ.get('DATABASE_URL'),
             conn_max_age=600
         )
     }
+# Nếu chạy DƯỚI MÁY LOCAL (Cá nhân)
 else:
     DATABASES = {
         'default': {
