@@ -112,7 +112,7 @@ def telegram_ai_webhook(request):
                     """
                     
                     # Gọi model Gemini để phân tích ảnh kết hợp chữ
-                   model = genai.GenerativeModel(model_name='gemini-1.5-flash')
+                    model = genai.GenerativeModel(model_name='gemini-1.5-flash')
                     ai_response = model.generate_content([prompt, image_part])
                     
                     try:
