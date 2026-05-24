@@ -11,6 +11,7 @@ urlpatterns = [
     # ── THÊM DÒNG NÀY: Đường dẫn xem chi tiết bài viết ──
     # <int:pk> sẽ tự động bắt ID của bài viết (ví dụ: /post/5/) và truyền vào hàm views.post_detail
     path('post/<int:pk>/', views.post_detail, name='post_detail'),
+    path('telegram-webhook/', views.telegram_ai_webhook, name='telegram_ai_webhook'),
 ]
 
 # Thêm dòng này để xem được ảnh trong lúc đang phát triển (DEBUG mode)
