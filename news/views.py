@@ -50,7 +50,7 @@ def telegram_ai_webhook(request):
         try:
             update = json.loads(request.body.decode('utf-8'))
             if "message" not in update:
-                return HttpResponse("OK")
+                return HttpResponse("OK", status=200)
                 
             message = update["message"]
             chat_id = str(message["chat"]["id"])
@@ -89,9 +89,9 @@ def telegram_ai_webhook(request):
                     }}
                     """
                     
-                    # Gọi Gemini với API mới
+                    # ĐÃ ĐỔI SANG MODEL 1.5-FLASH ĐỂ TRÁNH LỖI HẾT HẠN MỨC QUOTA (429)
                     ai_response = client.models.generate_content(
-                        model="gemini-2.0-flash",
+                        model="gemini-1.5-flash",
                         contents=[
                             prompt,
                             types.Part.from_bytes(data=image_data, mime_type="image/jpeg")
@@ -140,8 +140,9 @@ def telegram_ai_webhook(request):
                 user_text = message["text"]
                 
                 if user_text.strip() != "/start":
+                    # ĐÃ ĐỔI SANG MODEL 1.5-FLASH
                     ai_chat_response = client.models.generate_content(
-                        model="gemini-2.0-flash",
+                        model="gemini-1.5-flash",
                         contents=f"Bạn là một trợ lý thông minh am hiểu thể thao. Hãy trả lời câu hỏi sau của người dùng bằng tiếng Việt một cách tự nhiên, ngắn gọn: {user_text}"
                     )
                     bot_reply_text = ai_chat_response.text
