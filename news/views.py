@@ -18,7 +18,6 @@ from .models import Post
 # =========================================================
 
 def home(request):
-
     latest_posts = Post.objects.all().order_by('-created_at')[:5]
 
     trending_posts = Post.objects.all().order_by(
@@ -40,11 +39,8 @@ def home(request):
 
 
 def post_detail(request, pk):
-
     post = get_object_or_404(Post, pk=pk)
-
     post.views_count += 1
-
     post.save(update_fields=['views_count'])
 
     return render(
@@ -59,15 +55,11 @@ def post_detail(request, pk):
 # =========================================================
 
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
-
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
-
 YOUR_TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 
 REQUEST_TIMEOUT = 15
-
 LAST_REQUEST_TIME = 0
-
 PROCESSED_UPDATES = set()
 
 # =========================================================
@@ -88,7 +80,6 @@ client = Groq(api_key=GROQ_API_KEY) if GROQ_API_KEY else None
 
 @csrf_exempt
 def telegram_ai_webhook(request):
-
     global LAST_REQUEST_TIME
     global PROCESSED_UPDATES
 
@@ -96,15 +87,12 @@ def telegram_ai_webhook(request):
         return HttpResponse("Method not allowed", status=405)
 
     try:
-
         update = json.loads(request.body.decode('utf-8'))
-
         print("TELEGRAM UPDATE:", update)
 
         # =====================================================
         # CHỐNG UPDATE LẶP
         # =====================================================
-
         update_id = update.get("update_id")
 
         if update_id in PROCESSED_UPDATES:
@@ -118,18 +106,15 @@ def telegram_ai_webhook(request):
         # =====================================================
         # CHECK MESSAGE
         # =====================================================
-
         if "message" not in update:
             return HttpResponse("OK", status=200)
 
         message = update["message"]
-
         chat_id = str(message["chat"]["id"])
 
         # =====================================================
         # CHECK CHAT ID
         # =====================================================
-
         if YOUR_TELEGRAM_CHAT_ID:
             if chat_id != str(YOUR_TELEGRAM_CHAT_ID).strip():
                 return HttpResponse("Unauthorized", status=403)
@@ -137,15 +122,13 @@ def telegram_ai_webhook(request):
         # =====================================================
         # CHECK GROQ
         # =====================================================
-
         if not client:
-            print("Groq client lỗi")
+            print("Groq client lỗi hoặc thiếu API Key")
             return HttpResponse("OK", status=200)
 
         # =====================================================
         # CHỐNG SPAM REQUEST
         # =====================================================
-
         current_time = time.time()
 
         if current_time - LAST_REQUEST_TIME < 5:
@@ -157,26 +140,14 @@ def telegram_ai_webhook(request):
         # =====================================================
         # NHÁNH ĐĂNG BÀI TỪ ẢNH
         # =====================================================
-
         if "photo" in message and "caption" in message:
-
             keywords = message["caption"]
-
             photo_file = message["photo"][-1]
-
             file_id = photo_file["file_id"]
 
             # Lấy file info
-            file_info_url = (
-                f"https://api.telegram.org/bot"
-                f"{TELEGRAM_BOT_TOKEN}"
-                f"/getFile?file_id={file_id}"
-            )
-
-            file_info_res = requests.get(
-                file_info_url,
-                timeout=REQUEST_TIMEOUT
-            ).json()
+            file_info_url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/getFile?file_id={file_id}"
+            file_info_res = requests.get(file_info_url, timeout=REQUEST_TIMEOUT).json()
 
             if not file_info_res.get("ok"):
                 return HttpResponse("OK", status=200)
@@ -184,43 +155,28 @@ def telegram_ai_webhook(request):
             file_path = file_info_res["result"]["file_path"]
 
             # Download ảnh
-            download_url = (
-                f"https://api.telegram.org/file/bot"
-                f"{TELEGRAM_BOT_TOKEN}/{file_path}"
-            )
-
-            image_response = requests.get(
-                download_url,
-                timeout=REQUEST_TIMEOUT
-            )
-
+            download_url = f"https://api.telegram.org/file/bot{TELEGRAM_BOT_TOKEN}/{file_path}"
+            image_response = requests.get(download_url, timeout=REQUEST_TIMEOUT)
             image_data = image_response.content
 
             # Encode ảnh sang base64 cho Groq
             image_base64 = base64.b64encode(image_data).decode('utf-8')
 
             prompt = f"""Bạn là một biên tập viên thể thao chuyên nghiệp.
-
 Dựa vào ảnh và từ khóa: "{keywords}"
-
 Hãy viết bài báo thể thao hấp dẫn bằng tiếng Việt.
-
-CHỈ trả về JSON (không thêm bất kỳ chữ nào khác):
-
+CHỈ trả về JSON nguyên bản không bọc Markdown (không bọc trong ```json ... ```):
 {{
     "title": "Tiêu đề hay, giật gân, chuẩn SEO",
     "content": "Nội dung bài viết chi tiết, phân tích sâu"
 }}"""
 
-            # Groq AI với ảnh
             ai_response = None
-
             for attempt in range(3):
-
                 try:
-
+                    # Đổi model vision phù hợp của Llama 3.2 Vision trên Groq nếu xử lý ảnh
                     completion = client.chat.completions.create(
-                        model="meta-llama/llama-4-scout-17b-16e-instruct",
+                        model="llama-3.2-11b-vision-preview",
                         messages=[
                             {
                                 "role": "user",
@@ -239,61 +195,47 @@ CHỈ trả về JSON (không thêm bất kỳ chữ nào khác):
                             }
                         ],
                         max_tokens=2000,
-                        response_format={"type": "json_object"}  # ← thêm dòng này
+                        response_format={"type": "json_object"}
                     )
-
                     ai_response = completion.choices[0].message.content
                     break
-
                 except Exception as ai_error:
-
-                    print("GROQ ERROR:", ai_error)
-                    time.sleep(5)
+                    print("GROQ IMAGE ERROR:", ai_error)
+                    time.sleep(3)
 
             if not ai_response:
-
                 requests.post(
                     f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
                     json={
                         "chat_id": chat_id,
-                        "text": "❌ AI đang quá tải. Thử lại sau."
+                        "text": "❌ AI đang quá tải khi phân tích ảnh. Thử lại sau."
                     },
                     timeout=REQUEST_TIMEOUT
                 )
-
                 return HttpResponse("OK", status=200)
 
-            # Parse JSON
+            # Parse JSON và lưu vào DB
             try:
-
                 raw_text = ai_response.strip()
-
                 if raw_text.startswith("```json"):
                     raw_text = raw_text[7:]
-
                 if raw_text.endswith("```"):
                     raw_text = raw_text[:-3]
 
                 ai_data = json.loads(raw_text.strip())
-
                 ai_title = ai_data.get("title", "Tin thể thao mới")
                 ai_content = ai_data.get("content", "")
 
-                # Lưu bài viết
-                new_post = Post(
-                    title=ai_title,
-                    content=ai_content
-                )
+                # FIX LỖI TẠI ĐÂY: Lưu Model cha trước để tránh lỗi NoneType khi lưu File liên kết
+                new_post = Post(title=ai_title, content=ai_content)
+                new_post.save() 
 
                 filename = f"tele_{file_id[:10]}.jpg"
-
                 new_post.image_file.save(
                     filename,
                     ContentFile(image_data),
-                    save=False
+                    save=True # Thực hiện cập nhật chỉnh sửa lưu ảnh trực tiếp
                 )
-
-                new_post.save()
 
                 # Thông báo thành công
                 requests.post(
@@ -303,21 +245,19 @@ CHỈ trả về JSON (không thêm bất kỳ chữ nào khác):
                         "text": (
                             f"✅ AI đã đăng bài thành công!\n\n"
                             f"📌 {ai_title}\n\n"
-                            f"🌐 https://thenhtintucthethao.onrender.com/"
+                            f"🌐 https://thenh-tin-tuc-the-thao.onrender.com/"
                         )
                     },
                     timeout=REQUEST_TIMEOUT
                 )
 
             except Exception as json_error:
-
                 print("JSON ERROR:", json_error)
-
                 requests.post(
                     f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
                     json={
                         "chat_id": chat_id,
-                        "text": "❌ Lỗi xử lý dữ liệu AI."
+                        "text": "❌ Lỗi cấu trúc xử lý dữ liệu AI."
                     },
                     timeout=REQUEST_TIMEOUT
                 )
@@ -325,13 +265,10 @@ CHỈ trả về JSON (không thêm bất kỳ chữ nào khác):
         # =====================================================
         # CHATBOT TEXT
         # =====================================================
-
         elif "text" in message:
-
             user_text = message["text"]
 
             if user_text.strip() == "/start":
-
                 requests.post(
                     f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
                     json={
@@ -340,16 +277,11 @@ CHỈ trả về JSON (không thêm bất kỳ chữ nào khác):
                     },
                     timeout=REQUEST_TIMEOUT
                 )
-
                 return HttpResponse("OK", status=200)
 
-            # Groq chat
             bot_reply_text = "❌ AI đang bận."
-
             for attempt in range(3):
-
                 try:
-
                     completion = client.chat.completions.create(
                         model="llama-3.3-70b-versatile",
                         messages=[
@@ -364,14 +296,11 @@ CHỈ trả về JSON (không thêm bất kỳ chữ nào khác):
                         ],
                         max_tokens=1000
                     )
-
                     bot_reply_text = completion.choices[0].message.content
                     break
-
                 except Exception as chat_error:
-
                     print("CHAT ERROR:", chat_error)
-                    time.sleep(5)
+                    time.sleep(3)
 
             requests.post(
                 f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
@@ -385,7 +314,5 @@ CHỈ trả về JSON (không thêm bất kỳ chữ nào khác):
         return HttpResponse("OK", status=200)
 
     except Exception as e:
-
         print("WEBHOOK ERROR:", e)
-
         return HttpResponse("OK", status=200)
