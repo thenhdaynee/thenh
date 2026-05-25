@@ -260,7 +260,7 @@ def telegram_ai_webhook(request):
                 try:
 
                     ai_response = client.models.generate_content(
-                        model="gemini-2.0-flash-lite",
+                        model="gemini-2.0-flash",
                         contents=[
                             prompt,
                             types.Part.from_bytes(
@@ -408,7 +408,7 @@ def telegram_ai_webhook(request):
                 try:
 
                     ai_chat_response = client.models.generate_content(
-                        model="gemini-2.0-flash-lite",
+                        model="gemini-2.0-flash",
                         contents=f"""
                         Bạn là trợ lý AI thể thao.
 
