@@ -176,7 +176,7 @@ CHỈ trả về JSON nguyên bản không bọc Markdown (không bọc trong ``
                 try:
                     # Đổi model vision phù hợp của Llama 3.2 Vision trên Groq nếu xử lý ảnh
                     completion = client.chat.completions.create(
-                        model="llama-3.2-11b-vision-preview",
+                        model="llama-3.2-90b-vision-preview",
                         messages=[
                             {
                                 "role": "user",
