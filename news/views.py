@@ -11,6 +11,7 @@ from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.core.files.base import ContentFile
 
+import cloudinary.uploader  # Import bộ công cụ tải lên trực tiếp của Cloudinary
 from .models import Post
 
 # =========================================================
@@ -239,7 +240,7 @@ Bạn BẮT BUỘC phải xuất dữ liệu trả về theo đúng định dạ
                 send_telegram_message(chat_id, "❌ Trục trặc kỹ thuật: Hệ thống phân tích Vision không phản hồi.")
                 return HttpResponse("OK", status=200)
 
-            # Dọn dẹp ký tự thừa và tiến hành nạp cơ sở dữ liệu
+            # ĐOẠN ĐÃ THAY THẾ: Bóc tách JSON, đẩy ảnh lên Cloudinary trước rồi tạo Post an toàn
             try:
                 raw_text = ai_text.strip()
                 if raw_text.startswith("```json"):
@@ -251,12 +252,22 @@ Bạn BẮT BUỘC phải xuất dữ liệu trả về theo đúng định dạ
                 ai_title = ai_data.get("title") or "Tin tức thể thao nổi bật"
                 ai_content = ai_data.get("content") or ""
 
-                # Quy trình lưu an toàn: Khởi tạo dữ liệu -> Lưu lấy ID -> Lưu file ảnh và đồng bộ Cloudinary
-                new_post = Post(title=ai_title, content=ai_content)
-                new_post.save()
+                print("TITLE:", ai_title)
 
-                filename = f"tele_{file_id[:10]}.jpg"
-                new_post.image_file.save(filename, ContentFile(image_data), save=True)
+                # 1. Chủ động tải ảnh trực tiếp lên Cloudinary qua file binary image_data
+                upload_result = cloudinary.uploader.upload(
+                    image_data,
+                    public_id=f"tele_{file_id[:10]}",
+                    folder="news"
+                )
+
+                # 2. Khởi tạo và lưu thẳng đối tượng Post bằng public_id vừa nhận được
+                new_post = Post(
+                    title=ai_title,
+                    content=ai_content,
+                    image_file=upload_result.get("public_id")
+                )
+                new_post.save()
 
                 send_telegram_message(
                     chat_id,
@@ -265,7 +276,7 @@ Bạn BẮT BUỘC phải xuất dữ liệu trả về theo đúng định dạ
 
             except Exception as save_error:
                 print("SAVE ERROR:", save_error)
-                send_telegram_message(chat_id, f"❌ Thất bại khi ghi bài viết: {str(save_error)[:100]}")
+                send_telegram_message(chat_id, f"❌ Lỗi ghi bài viết: {str(save_error)[:100]}")
 
         # =====================================================
         # NHÁNH 2: TEXT → CHATBOT HỎI ĐÁP + SỬ DỤNG WEB SEARCH TOOL
@@ -282,7 +293,6 @@ Bạn BẮT BUỘC phải xuất dữ liệu trả về theo đúng định dạ
                 )
                 return HttpResponse("OK", status=200)
 
-            # Chỉ thông báo tìm kiếm đối với các câu hỏi tin tức cần tra cứu, không gửi bừa bãi tránh spam chat
             bot_reply_text = "❌ Trợ lý AI hiện tại đang bận xử lý dữ liệu."
 
             for attempt in range(3):
