@@ -254,14 +254,17 @@ Bạn BẮT BUỘC phải xuất dữ liệu trả về theo đúng định dạ
 
                 print("TITLE:", ai_title)
 
-                # 1. Chủ động tải ảnh trực tiếp lên Cloudinary qua file binary image_data
+                # Đổi cách đặt tên ID ảnh: Kết hợp chuỗi file_id ngắn kèm mốc thời gian thực tế để chống trùng lặp
+                unique_img_id = f"tele_{file_id[:8]}_{int(time.time() * 1000)}"
+
+                # 1. Chủ động tải ảnh trực tiếp lên Cloudinary qua file binary image_data với ID độc nhất mới
                 upload_result = cloudinary.uploader.upload(
                     image_data,
-                    public_id=f"tele_{file_id[:10]}",
+                    public_id=unique_img_id,
                     folder="news"
                 )
 
-                # 2. Khởi tạo và lưu thẳng đối tượng Post bằng public_id vừa nhận được
+                # 2. Khởi tạo và lưu thẳng đối tượng Post bằng public_id chuẩn xác hoàn toàn mới
                 new_post = Post(
                     title=ai_title,
                     content=ai_content,
@@ -355,6 +358,7 @@ Bạn BẮT BUỘC phải xuất dữ liệu trả về theo đúng định dạ
                         })
                         messages.append({
                             "role": "tool",
+                            "call_id": tool_call.id, # Cập nhật chuẩn tham số cho hệ thống tool_call_id
                             "tool_call_id": tool_call.id,
                             "content": search_result
                         })
