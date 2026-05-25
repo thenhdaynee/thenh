@@ -18,9 +18,17 @@ from .models import Post
 # =========================================================
 
 def home(request):
+
     latest_posts = Post.objects.all().order_by('-created_at')[:5]
-    trending_posts = Post.objects.all().order_by('-views_count', '-created_at')[:4]
-    featured_posts = Post.objects.filter(is_featured=True).order_by('-created_at')[:6]
+
+    trending_posts = Post.objects.all().order_by(
+        '-views_count',
+        '-created_at'
+    )[:4]
+
+    featured_posts = Post.objects.filter(
+        is_featured=True
+    ).order_by('-created_at')[:6]
 
     context = {
         'latest_posts': latest_posts,
@@ -32,12 +40,18 @@ def home(request):
 
 
 def post_detail(request, pk):
+
     post = get_object_or_404(Post, pk=pk)
 
     post.views_count += 1
+
     post.save(update_fields=['views_count'])
 
-    return render(request, 'post_detail.html', {'post': post})
+    return render(
+        request,
+        'post_detail.html',
+        {'post': post}
+    )
 
 
 # =========================================================
@@ -45,21 +59,37 @@ def post_detail(request, pk):
 # =========================================================
 
 GEMINI_KEY = os.environ.get("GEMINI_API_KEY")
+
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
+
 YOUR_TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 
 REQUEST_TIMEOUT = 15
 
 LAST_REQUEST_TIME = 0
+
 PROCESSED_UPDATES = set()
 
+# =========================================================
+# GEMINI CHECK
+# =========================================================
+
 if GEMINI_KEY:
+
     print(f"=== GEMINI KEY OK: {GEMINI_KEY[:6]}... ===")
+
 else:
+
     print("=== KHÔNG TÌM THẤY GEMINI_API_KEY ===")
 
-client = genai.Client(api_key=GEMINI_KEY) if GEMINI_KEY else None
+client = genai.Client(
+    api_key=GEMINI_KEY
+) if GEMINI_KEY else None
 
+
+# =========================================================
+# TELEGRAM WEBHOOK
+# =========================================================
 
 @csrf_exempt
 def telegram_ai_webhook(request):
@@ -68,26 +98,33 @@ def telegram_ai_webhook(request):
     global PROCESSED_UPDATES
 
     if request.method != "POST":
-        return HttpResponse("Method not allowed", status=405)
+        return HttpResponse(
+            "Method not allowed",
+            status=405
+        )
 
     try:
 
-        update = json.loads(request.body.decode('utf-8'))
+        update = json.loads(
+            request.body.decode('utf-8')
+        )
 
         print("TELEGRAM UPDATE:", update)
 
         # =====================================================
-        # CHỐNG UPDATE BỊ GỬI LẶP
+        # CHỐNG UPDATE LẶP
         # =====================================================
 
         update_id = update.get("update_id")
 
         if update_id in PROCESSED_UPDATES:
+
             return HttpResponse("OK", status=200)
 
         PROCESSED_UPDATES.add(update_id)
 
         if len(PROCESSED_UPDATES) > 100:
+
             PROCESSED_UPDATES.clear()
 
         # =====================================================
@@ -95,26 +132,38 @@ def telegram_ai_webhook(request):
         # =====================================================
 
         if "message" not in update:
+
             return HttpResponse("OK", status=200)
 
         message = update["message"]
 
-        chat_id = str(message["chat"]["id"])
+        chat_id = str(
+            message["chat"]["id"]
+        )
 
         # =====================================================
-        # CHECK USER
+        # CHECK CHAT ID
         # =====================================================
 
         if YOUR_TELEGRAM_CHAT_ID:
-            if chat_id != str(YOUR_TELEGRAM_CHAT_ID).strip():
-                return HttpResponse("Unauthorized", status=403)
+
+            if chat_id != str(
+                YOUR_TELEGRAM_CHAT_ID
+            ).strip():
+
+                return HttpResponse(
+                    "Unauthorized",
+                    status=403
+                )
 
         # =====================================================
         # CHECK GEMINI
         # =====================================================
 
         if not client:
+
             print("Gemini client lỗi")
+
             return HttpResponse("OK", status=200)
 
         # =====================================================
@@ -124,13 +173,15 @@ def telegram_ai_webhook(request):
         current_time = time.time()
 
         if current_time - LAST_REQUEST_TIME < 5:
+
             print("SPAM REQUEST BLOCKED")
+
             return HttpResponse("OK", status=200)
 
         LAST_REQUEST_TIME = current_time
 
         # =====================================================
-        # NHÁNH ĐĂNG BÀI
+        # NHÁNH ĐĂNG BÀI TỪ ẢNH
         # =====================================================
 
         if "photo" in message and "caption" in message:
@@ -147,7 +198,8 @@ def telegram_ai_webhook(request):
 
             file_info_url = (
                 f"https://api.telegram.org/bot"
-                f"{TELEGRAM_BOT_TOKEN}/getFile?file_id={file_id}"
+                f"{TELEGRAM_BOT_TOKEN}"
+                f"/getFile?file_id={file_id}"
             )
 
             file_info_res = requests.get(
@@ -156,6 +208,7 @@ def telegram_ai_webhook(request):
             ).json()
 
             if not file_info_res.get("ok"):
+
                 return HttpResponse("OK", status=200)
 
             file_path = file_info_res["result"]["file_path"]
@@ -197,25 +250,35 @@ def telegram_ai_webhook(request):
             """
 
             # =====================================================
-            # GEMINI
+            # GEMINI AI + RETRY
             # =====================================================
 
-            try:
+            ai_response = None
 
-                ai_response = client.models.generate_content(
-                    model="gemini-2.0-flash-lite",
-                    contents=[
-                        prompt,
-                        types.Part.from_bytes(
-                            data=image_data,
-                            mime_type="image/jpeg"
-                        )
-                    ]
-                )
+            for attempt in range(3):
 
-            except Exception as ai_error:
+                try:
 
-                print("GEMINI ERROR:", ai_error)
+                    ai_response = client.models.generate_content(
+                        model="gemini-2.0-flash-lite",
+                        contents=[
+                            prompt,
+                            types.Part.from_bytes(
+                                data=image_data,
+                                mime_type="image/jpeg"
+                            )
+                        ]
+                    )
+
+                    break
+
+                except Exception as ai_error:
+
+                    print("GEMINI ERROR:", ai_error)
+
+                    time.sleep(5)
+
+            if not ai_response:
 
                 requests.post(
                     f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
@@ -229,7 +292,7 @@ def telegram_ai_webhook(request):
                 return HttpResponse("OK", status=200)
 
             # =====================================================
-            # JSON PARSE
+            # PARSE JSON
             # =====================================================
 
             try:
@@ -237,16 +300,26 @@ def telegram_ai_webhook(request):
                 raw_text = ai_response.text.strip()
 
                 if raw_text.startswith("```json"):
+
                     raw_text = raw_text[7:]
 
                 if raw_text.endswith("```"):
+
                     raw_text = raw_text[:-3]
 
-                ai_data = json.loads(raw_text.strip())
+                ai_data = json.loads(
+                    raw_text.strip()
+                )
 
-                ai_title = ai_data.get("title", "Tin thể thao mới")
+                ai_title = ai_data.get(
+                    "title",
+                    "Tin thể thao mới"
+                )
 
-                ai_content = ai_data.get("content", "")
+                ai_content = ai_data.get(
+                    "content",
+                    ""
+                )
 
                 # =====================================================
                 # SAVE POST
@@ -257,7 +330,9 @@ def telegram_ai_webhook(request):
                     content=ai_content
                 )
 
-                filename = f"tele_{file_id[:10]}.jpg"
+                filename = (
+                    f"tele_{file_id[:10]}.jpg"
+                )
 
                 new_post.image_file.save(
                     filename,
@@ -268,7 +343,7 @@ def telegram_ai_webhook(request):
                 new_post.save()
 
                 # =====================================================
-                # TELEGRAM SUCCESS
+                # SEND SUCCESS
                 # =====================================================
 
                 requests.post(
@@ -305,6 +380,10 @@ def telegram_ai_webhook(request):
 
             user_text = message["text"]
 
+            # =====================================================
+            # START
+            # =====================================================
+
             if user_text.strip() == "/start":
 
                 requests.post(
@@ -318,26 +397,40 @@ def telegram_ai_webhook(request):
 
                 return HttpResponse("OK", status=200)
 
-            try:
+            # =====================================================
+            # GEMINI CHAT + RETRY
+            # =====================================================
 
-                ai_chat_response = client.models.generate_content(
-                    model="gemini-2.0-flash-lite",
-                    contents=f"""
-                    Bạn là trợ lý AI thể thao.
+            bot_reply_text = "❌ AI đang bận."
 
-                    Trả lời ngắn gọn bằng tiếng Việt:
+            for attempt in range(3):
 
-                    {user_text}
-                    """
-                )
+                try:
 
-                bot_reply_text = ai_chat_response.text
+                    ai_chat_response = client.models.generate_content(
+                        model="gemini-2.0-flash-lite",
+                        contents=f"""
+                        Bạn là trợ lý AI thể thao.
 
-            except Exception as chat_error:
+                        Trả lời ngắn gọn bằng tiếng Việt:
 
-                print("CHAT ERROR:", chat_error)
+                        {user_text}
+                        """
+                    )
 
-                bot_reply_text = "❌ AI đang bận. Vui lòng thử lại."
+                    bot_reply_text = ai_chat_response.text
+
+                    break
+
+                except Exception as chat_error:
+
+                    print("CHAT ERROR:", chat_error)
+
+                    time.sleep(5)
+
+            # =====================================================
+            # SEND MESSAGE
+            # =====================================================
 
             requests.post(
                 f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
