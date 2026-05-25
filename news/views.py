@@ -220,7 +220,7 @@ CHỈ trả về JSON (không thêm bất kỳ chữ nào khác):
                 try:
 
                     completion = client.chat.completions.create(
-                        model="llama-3.2-90b-vision-preview",
+                        model="meta-llama/llama-4-scout-17b-16e-instruct",
                         messages=[
                             {
                                 "role": "user",
@@ -239,6 +239,7 @@ CHỈ trả về JSON (không thêm bất kỳ chữ nào khác):
                             }
                         ],
                         max_tokens=2000
+                        response_format={"type": "json_object"}  # ← thêm dòng này
                     )
 
                     ai_response = completion.choices[0].message.content
