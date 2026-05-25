@@ -3,6 +3,7 @@ import os
 import cloudinary
 import cloudinary.uploader
 import cloudinary.api
+
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -10,11 +11,31 @@ load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.environ.get('SECRET_KEY', 'fallback-key-chi-dung-local')
+# =========================================================
+# SECRET
+# =========================================================
+
+SECRET_KEY = os.environ.get(
+    'SECRET_KEY',
+    'fallback-key-chi-dung-local'
+)
 
 DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
 ALLOWED_HOSTS = ['*']
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://thenhtintucthethao.onrender.com"
+]
+
+SECURE_PROXY_SSL_HEADER = (
+    'HTTP_X_FORWARDED_PROTO',
+    'https'
+)
+
+# =========================================================
+# APPS
+# =========================================================
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -23,98 +44,219 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
     'cloudinary',
     'cloudinary_storage',
+
     'news',
 ]
 
+# =========================================================
+# MIDDLEWARE
+# =========================================================
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+
     'whitenoise.middleware.WhiteNoiseMiddleware',
+
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
+
     'django.middleware.csrf.CsrfViewMiddleware',
+
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
+
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
 ROOT_URLCONF = 'sport_news_web.urls'
 
+# =========================================================
+# TEMPLATES
+# =========================================================
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
+
         'DIRS': [],
+
         'APP_DIRS': True,
+
         'OPTIONS': {
             'context_processors': [
                 'django.template.context_processors.request',
+
                 'django.contrib.auth.context_processors.auth',
+
                 'django.contrib.messages.context_processors.messages',
             ],
         },
     },
 ]
 
+# =========================================================
+# WSGI
+# =========================================================
+
 WSGI_APPLICATION = 'sport_news_web.wsgi.application'
 
-# Kiểm tra nếu đang chạy TRÊN SERVER RENDER
+# =========================================================
+# DATABASE
+# =========================================================
+
 if os.environ.get('RENDER'):
+
     DATABASES = {
         'default': dj_database_url.config(
             default=os.environ.get('DATABASE_URL'),
             conn_max_age=600
         )
     }
-# Nếu chạy DƯỚI MÁY LOCAL (Cá nhân)
+
 else:
+
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
+
             'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
 
+# =========================================================
+# PASSWORD VALIDATORS
+# =========================================================
+
 AUTH_PASSWORD_VALIDATORS = [
-    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
-    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
-    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
-    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
+
+    {
+        'NAME':
+        'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'
+    },
+
+    {
+        'NAME':
+        'django.contrib.auth.password_validation.MinimumLengthValidator'
+    },
+
+    {
+        'NAME':
+        'django.contrib.auth.password_validation.CommonPasswordValidator'
+    },
+
+    {
+        'NAME':
+        'django.contrib.auth.password_validation.NumericPasswordValidator'
+    },
 ]
 
+# =========================================================
+# LANGUAGE
+# =========================================================
+
 LANGUAGE_CODE = 'en-us'
-TIME_ZONE = 'UTC'
+
+TIME_ZONE = 'Asia/Ho_Chi_Minh'
+
 USE_I18N = True
+
 USE_TZ = True
 
-# Static files
-STATIC_URL = 'static/'
-STATICFILES_DIRS = [BASE_DIR / "static"]
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+# =========================================================
+# STATIC FILES
+# =========================================================
 
-# Media + Cloudinary
+STATIC_URL = 'static/'
+
+STATICFILES_DIRS = [
+    BASE_DIR / "static"
+]
+
+STATIC_ROOT = os.path.join(
+    BASE_DIR,
+    'staticfiles'
+)
+
+STATICFILES_STORAGE = (
+    'whitenoise.storage.CompressedManifestStaticFilesStorage'
+)
+
+# =========================================================
+# MEDIA FILES
+# =========================================================
+
 MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+MEDIA_ROOT = os.path.join(
+    BASE_DIR,
+    'media'
+)
+
+# =========================================================
+# CLOUDINARY
+# =========================================================
 
 cloudinary.config(
-    cloud_name=os.environ.get('CLOUDINARY_CLOUD_NAME'),
-    api_key=os.environ.get('CLOUDINARY_API_KEY'),
-    api_secret=os.environ.get('CLOUDINARY_API_SECRET'),
+    cloud_name=os.environ.get(
+        'CLOUDINARY_CLOUD_NAME'
+    ),
+
+    api_key=os.environ.get(
+        'CLOUDINARY_API_KEY'
+    ),
+
+    api_secret=os.environ.get(
+        'CLOUDINARY_API_SECRET'
+    ),
+
     secure=True
 )
 
 CLOUDINARY_STORAGE = {
-    'CLOUD_NAME': os.environ.get('CLOUDINARY_CLOUD_NAME'),
-    'API_KEY': os.environ.get('CLOUDINARY_API_KEY'),
-    'API_SECRET': os.environ.get('CLOUDINARY_API_SECRET'),
+
+    'CLOUD_NAME': os.environ.get(
+        'CLOUDINARY_CLOUD_NAME'
+    ),
+
+    'API_KEY': os.environ.get(
+        'CLOUDINARY_API_KEY'
+    ),
+
+    'API_SECRET': os.environ.get(
+        'CLOUDINARY_API_SECRET'
+    ),
 }
 
-DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+DEFAULT_FILE_STORAGE = (
+    'cloudinary_storage.storage.MediaCloudinaryStorage'
+)
+
+# =========================================================
+# DEFAULT FIELD
+# =========================================================
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# =========================================================
+# LOG
+# =========================================================
+
 print("=== CLOUDINARY CHECK ===")
-print("CLOUD_NAME:", os.environ.get('CLOUDINARY_CLOUD_NAME'))
-print("API_KEY:", os.environ.get('CLOUDINARY_API_KEY'))
-print("STORAGE:", DEFAULT_FILE_STORAGE)
+
+print(
+    "CLOUD_NAME:",
+    os.environ.get('CLOUDINARY_CLOUD_NAME')
+)
+
+print(
+    "API_KEY:",
+    os.environ.get('CLOUDINARY_API_KEY')
+)
+
+print(
+    "STORAGE:",
+    DEFAULT_FILE_STORAGE
+)

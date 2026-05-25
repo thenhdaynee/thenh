@@ -1,17 +1,21 @@
 import os
 import json
+import time
 import requests
-import google.genai as genai
+
+from google import genai
 from google.genai import types
+
 from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.core.files.base import ContentFile
+
 from .models import Post
 
-# =====================================================================
-# 1. CÁC HÀM XỬ LÝ VIEW GIAO DIỆN WEB
-# =====================================================================
+# =========================================================
+# WEB
+# =========================================================
 
 def home(request):
     latest_posts = Post.objects.all().order_by('-created_at')[:5]
@@ -23,154 +27,331 @@ def home(request):
         'trending_posts': trending_posts,
         'featured_posts': featured_posts,
     }
+
     return render(request, 'index.html', context)
 
 
 def post_detail(request, pk):
     post = get_object_or_404(Post, pk=pk)
+
     post.views_count += 1
     post.save(update_fields=['views_count'])
+
     return render(request, 'post_detail.html', {'post': post})
 
 
-# =====================================================================
-# 2. BỘ NÃO XỬ LÝ WEBHOOK TELEGRAM + GEMINI AI (BẢN TỐI ƯU 2.0-FLASH-LITE)
-# =====================================================================
+# =========================================================
+# TELEGRAM + GEMINI
+# =========================================================
 
-# Đọc chính xác biến môi trường GEMINI_API_KEY từ Render
 GEMINI_KEY = os.environ.get("GEMINI_API_KEY")
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 YOUR_TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 
-# --- ĐOẠN SỬA ĐỂ IN LOG CHÍNH XÁC ---
-if GEMINI_KEY:
-    # Chỉ in 6 ký tự đầu dạng AIzaSy... để bạn kiểm tra Render đã ăn key mới chưa
-    print(f"--- [HỆ THỐNG CRITICAL] GEMINI_API_KEY CHÍNH THỨC HOẠT ĐỘNG: {GEMINI_KEY[:6]}... ---")
-else:
-    print("--- [HỆ THỐNG CẢNH BÁO] KHÔNG TÌM THẤY BIẾN GEMINI_API_KEY TRÊN RENDER! ---")
-# ------------------------------------
+REQUEST_TIMEOUT = 15
 
-# Khởi tạo Gemini client theo thư viện mới toàn diện
+LAST_REQUEST_TIME = 0
+PROCESSED_UPDATES = set()
+
+if GEMINI_KEY:
+    print(f"=== GEMINI KEY OK: {GEMINI_KEY[:6]}... ===")
+else:
+    print("=== KHÔNG TÌM THẤY GEMINI_API_KEY ===")
+
 client = genai.Client(api_key=GEMINI_KEY) if GEMINI_KEY else None
+
 
 @csrf_exempt
 def telegram_ai_webhook(request):
-    if request.method == "POST":
-        try:
-            update = json.loads(request.body.decode('utf-8'))
-            if "message" not in update:
-                return HttpResponse("OK", status=200)
-                
-            message = update["message"]
-            chat_id = str(message["chat"]["id"])
-            
-            if YOUR_TELEGRAM_CHAT_ID and chat_id != str(YOUR_TELEGRAM_CHAT_ID).strip():
+
+    global LAST_REQUEST_TIME
+    global PROCESSED_UPDATES
+
+    if request.method != "POST":
+        return HttpResponse("Method not allowed", status=405)
+
+    try:
+
+        update = json.loads(request.body.decode('utf-8'))
+
+        print("TELEGRAM UPDATE:", update)
+
+        # =====================================================
+        # CHỐNG UPDATE BỊ GỬI LẶP
+        # =====================================================
+
+        update_id = update.get("update_id")
+
+        if update_id in PROCESSED_UPDATES:
+            return HttpResponse("OK", status=200)
+
+        PROCESSED_UPDATES.add(update_id)
+
+        if len(PROCESSED_UPDATES) > 100:
+            PROCESSED_UPDATES.clear()
+
+        # =====================================================
+        # CHECK MESSAGE
+        # =====================================================
+
+        if "message" not in update:
+            return HttpResponse("OK", status=200)
+
+        message = update["message"]
+
+        chat_id = str(message["chat"]["id"])
+
+        # =====================================================
+        # CHECK USER
+        # =====================================================
+
+        if YOUR_TELEGRAM_CHAT_ID:
+            if chat_id != str(YOUR_TELEGRAM_CHAT_ID).strip():
                 return HttpResponse("Unauthorized", status=403)
 
-            # Nếu không cấu hình được client Gemini thì thông báo lỗi và thoát ngay
-            if not client:
-                print("Lỗi: Client Gemini chưa được khởi tạo. Kiểm tra lại API Key.")
+        # =====================================================
+        # CHECK GEMINI
+        # =====================================================
+
+        if not client:
+            print("Gemini client lỗi")
+            return HttpResponse("OK", status=200)
+
+        # =====================================================
+        # CHỐNG SPAM REQUEST
+        # =====================================================
+
+        current_time = time.time()
+
+        if current_time - LAST_REQUEST_TIME < 5:
+            print("SPAM REQUEST BLOCKED")
+            return HttpResponse("OK", status=200)
+
+        LAST_REQUEST_TIME = current_time
+
+        # =====================================================
+        # NHÁNH ĐĂNG BÀI
+        # =====================================================
+
+        if "photo" in message and "caption" in message:
+
+            keywords = message["caption"]
+
+            photo_file = message["photo"][-1]
+
+            file_id = photo_file["file_id"]
+
+            # =====================================================
+            # GET FILE INFO
+            # =====================================================
+
+            file_info_url = (
+                f"https://api.telegram.org/bot"
+                f"{TELEGRAM_BOT_TOKEN}/getFile?file_id={file_id}"
+            )
+
+            file_info_res = requests.get(
+                file_info_url,
+                timeout=REQUEST_TIMEOUT
+            ).json()
+
+            if not file_info_res.get("ok"):
                 return HttpResponse("OK", status=200)
 
-            # -----------------------------------------------------------------
-            # NHÁNH 1: GỬI ẢNH KÈM CHỮ -> TỰ ĐỘNG ĐĂNG BÀI LÊN WEB
-            # -----------------------------------------------------------------
-            if "photo" in message and "caption" in message:
-                keywords = message["caption"] 
-                
-                photo_file = message["photo"][-1]
-                file_id = photo_file["file_id"]
-                
-                file_info_url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/getFile?file_id={file_id}"
-                file_info_res = requests.get(file_info_url).json()
-                
-                if file_info_res.get("ok"):
-                    file_path = file_info_res["result"]["file_path"]
-                    download_url = f"https://api.telegram.org/file/bot{TELEGRAM_BOT_TOKEN}/{file_path}"
-                    
-                    image_response = requests.get(download_url)
-                    image_data = image_response.content
-                    
-                    prompt = f"""
-                    Bạn là một biên tập viên tin tức thể thao chuyên nghiệp và giàu kinh nghiệm. 
-                    Dựa vào bức ảnh được cung cấp và các từ khóa gợi ý sau: "{keywords}".
-                    Hãy viết một bài báo hoàn chỉnh, phân tích sâu sắc, lôi cuốn bằng tiếng Việt.
-                    
-                    YÊU CẦU ĐẦU RA PHẢI THEO ĐÚNG CẤU TRÚC JSON DƯỚI ĐÂY (Tuyệt đối không viết kèm thêm bất cứ câu từ chào hỏi nào nằm ngoài cấu trúc JSON này):
-                    {{
-                        "title": "Tiêu đề bài viết hay, giật gân, chuẩn SEO",
-                        "content": "Nội dung chi tiết bài viết (chia thành các đoạn văn rõ ràng, có phân tích)"
-                    }}
-                    """
-                    
-                    # TỐI ƯU: Sử dụng gemini-2.0-flash-lite tốc độ cao, hạn mức rộng
-                    ai_response = client.models.generate_content(
-                        model="gemini-2.0-flash-lite",
-                        contents=[
-                            prompt,
-                            types.Part.from_bytes(data=image_data, mime_type="image/jpeg")
-                        ]
-                    )
-                    
-                    try:
-                        raw_text = ai_response.text.strip()
-                        if raw_text.startswith("```json"):
-                            raw_text = raw_text[7:]
-                        if raw_text.endswith("```"):
-                            raw_text = raw_text[:-3]
-                        clean_json = raw_text.strip()
-                        
-                        ai_data = json.loads(clean_json)
-                        ai_title = ai_data.get("title")
-                        ai_content = ai_data.get("content")
-                        
-                        new_post = Post(
-                            title=ai_title,
-                            content=ai_content
-                        )
-                        
-                        filename = f"tele_{file_id[:10]}.jpg"
-                        new_post.image_file.save(filename, ContentFile(image_data), save=False)
-                        new_post.save()
-                        
-                        reply_url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-                        requests.post(reply_url, json={
-                            "chat_id": chat_id,
-                            "text": f"✅ AI đã viết bài và đăng thành công lên Web!\n\n📌 Tiêu đề: {ai_title}\n\n🔗 Xem trên web: https://thenhtintucthethao.onrender.com/"
-                        })
-                        
-                    except Exception as json_err:
-                        print("Lỗi parse JSON từ AI hoặc lỗi đồng bộ Cloudinary:", json_err)
-                        error_url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-                        requests.post(error_url, json={
-                            "chat_id": chat_id,
-                            "text": "❌ Lỗi cấu trúc bài viết từ AI hoặc Cloudinary quá tải. Vui lòng thử lại sau ít phút."
-                        })
+            file_path = file_info_res["result"]["file_path"]
 
-            # -----------------------------------------------------------------
-            # NHÁNH 2: CHỈ NHẮN CHỮ -> CHATBOT TƯƠNG TÁC GIAO TIẾP
-            # -----------------------------------------------------------------
-            elif "text" in message:
-                user_text = message["text"]
-                
-                if user_text.strip() != "/start":
-                    # TỐI ƯU: Sử dụng gemini-2.0-flash-lite cho phản hồi chat mượt mà
-                    ai_chat_response = client.models.generate_content(
-                        model="gemini-2.0-flash-lite",
-                        contents=f"Bạn là một trợ lý thông minh am hiểu thể thao. Hãy trả lời câu hỏi sau của người dùng bằng tiếng Việt một cách tự nhiên, ngắn gọn: {user_text}"
-                    )
-                    bot_reply_text = ai_chat_response.text
-                    
-                    chat_url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-                    requests.post(chat_url, json={
+            # =====================================================
+            # DOWNLOAD IMAGE
+            # =====================================================
+
+            download_url = (
+                f"https://api.telegram.org/file/bot"
+                f"{TELEGRAM_BOT_TOKEN}/{file_path}"
+            )
+
+            image_response = requests.get(
+                download_url,
+                timeout=REQUEST_TIMEOUT
+            )
+
+            image_data = image_response.content
+
+            # =====================================================
+            # PROMPT
+            # =====================================================
+
+            prompt = f"""
+            Bạn là một biên tập viên thể thao chuyên nghiệp.
+
+            Dựa vào ảnh và từ khóa:
+            "{keywords}"
+
+            Hãy viết bài báo thể thao hấp dẫn bằng tiếng Việt.
+
+            CHỈ trả về JSON:
+
+            {{
+                "title": "Tiêu đề",
+                "content": "Nội dung"
+            }}
+            """
+
+            # =====================================================
+            # GEMINI
+            # =====================================================
+
+            try:
+
+                ai_response = client.models.generate_content(
+                    model="gemini-2.0-flash-lite",
+                    contents=[
+                        prompt,
+                        types.Part.from_bytes(
+                            data=image_data,
+                            mime_type="image/jpeg"
+                        )
+                    ]
+                )
+
+            except Exception as ai_error:
+
+                print("GEMINI ERROR:", ai_error)
+
+                requests.post(
+                    f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
+                    json={
                         "chat_id": chat_id,
-                        "text": bot_reply_text
-                    })
-                    
-            return HttpResponse("OK", status=200)
-        except Exception as e:
-            print("Lỗi hệ thống Webhook:", e)
-            # Luôn trả về 200 để bẻ gãy vòng lặp tự động gửi lại tin nhắn lỗi của Telegram
-            return HttpResponse("OK", status=200)
-            
-    return HttpResponse("Method not allowed", status=405)
+                        "text": "❌ Gemini đang quá tải. Thử lại sau."
+                    },
+                    timeout=REQUEST_TIMEOUT
+                )
+
+                return HttpResponse("OK", status=200)
+
+            # =====================================================
+            # JSON PARSE
+            # =====================================================
+
+            try:
+
+                raw_text = ai_response.text.strip()
+
+                if raw_text.startswith("```json"):
+                    raw_text = raw_text[7:]
+
+                if raw_text.endswith("```"):
+                    raw_text = raw_text[:-3]
+
+                ai_data = json.loads(raw_text.strip())
+
+                ai_title = ai_data.get("title", "Tin thể thao mới")
+
+                ai_content = ai_data.get("content", "")
+
+                # =====================================================
+                # SAVE POST
+                # =====================================================
+
+                new_post = Post(
+                    title=ai_title,
+                    content=ai_content
+                )
+
+                filename = f"tele_{file_id[:10]}.jpg"
+
+                new_post.image_file.save(
+                    filename,
+                    ContentFile(image_data),
+                    save=False
+                )
+
+                new_post.save()
+
+                # =====================================================
+                # TELEGRAM SUCCESS
+                # =====================================================
+
+                requests.post(
+                    f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
+                    json={
+                        "chat_id": chat_id,
+                        "text": (
+                            f"✅ AI đã đăng bài thành công!\n\n"
+                            f"📌 {ai_title}\n\n"
+                            f"🌐 https://thenhtintucthethao.onrender.com/"
+                        )
+                    },
+                    timeout=REQUEST_TIMEOUT
+                )
+
+            except Exception as json_error:
+
+                print("JSON ERROR:", json_error)
+
+                requests.post(
+                    f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
+                    json={
+                        "chat_id": chat_id,
+                        "text": "❌ Lỗi xử lý dữ liệu AI."
+                    },
+                    timeout=REQUEST_TIMEOUT
+                )
+
+        # =====================================================
+        # CHATBOT
+        # =====================================================
+
+        elif "text" in message:
+
+            user_text = message["text"]
+
+            if user_text.strip() == "/start":
+
+                requests.post(
+                    f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
+                    json={
+                        "chat_id": chat_id,
+                        "text": "🤖 Bot AI thể thao đã hoạt động."
+                    },
+                    timeout=REQUEST_TIMEOUT
+                )
+
+                return HttpResponse("OK", status=200)
+
+            try:
+
+                ai_chat_response = client.models.generate_content(
+                    model="gemini-2.0-flash-lite",
+                    contents=f"""
+                    Bạn là trợ lý AI thể thao.
+
+                    Trả lời ngắn gọn bằng tiếng Việt:
+
+                    {user_text}
+                    """
+                )
+
+                bot_reply_text = ai_chat_response.text
+
+            except Exception as chat_error:
+
+                print("CHAT ERROR:", chat_error)
+
+                bot_reply_text = "❌ AI đang bận. Vui lòng thử lại."
+
+            requests.post(
+                f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
+                json={
+                    "chat_id": chat_id,
+                    "text": bot_reply_text
+                },
+                timeout=REQUEST_TIMEOUT
+            )
+
+        return HttpResponse("OK", status=200)
+
+    except Exception as e:
+
+        print("WEBHOOK ERROR:", e)
+
+        return HttpResponse("OK", status=200)
