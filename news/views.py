@@ -37,11 +37,20 @@ def post_detail(request, pk):
 # 2. BỘ NÃO XỬ LÝ WEBHOOK TELEGRAM + GEMINI AI (BẢN TỐI ƯU 2.0-FLASH-LITE)
 # =====================================================================
 
+# Đọc chính xác biến môi trường GEMINI_API_KEY từ Render
 GEMINI_KEY = os.environ.get("GEMINI_API_KEY")
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 YOUR_TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 
-# Khởi tạo Gemini client theo thư viện mới
+# --- ĐOẠN SỬA ĐỂ IN LOG CHÍNH XÁC ---
+if GEMINI_KEY:
+    # Chỉ in 6 ký tự đầu dạng AIzaSy... để bạn kiểm tra Render đã ăn key mới chưa
+    print(f"--- [HỆ THỐNG CRITICAL] GEMINI_API_KEY CHÍNH THỨC HOẠT ĐỘNG: {GEMINI_KEY[:6]}... ---")
+else:
+    print("--- [HỆ THỐNG CẢNH BÁO] KHÔNG TÌM THẤY BIẾN GEMINI_API_KEY TRÊN RENDER! ---")
+# ------------------------------------
+
+# Khởi tạo Gemini client theo thư viện mới toàn diện
 client = genai.Client(api_key=GEMINI_KEY) if GEMINI_KEY else None
 
 @csrf_exempt
@@ -58,8 +67,9 @@ def telegram_ai_webhook(request):
             if YOUR_TELEGRAM_CHAT_ID and chat_id != str(YOUR_TELEGRAM_CHAT_ID).strip():
                 return HttpResponse("Unauthorized", status=403)
 
-            # Nếu không có client Gemini thì bỏ qua để tránh sập app
+            # Nếu không cấu hình được client Gemini thì thông báo lỗi và thoát ngay
             if not client:
+                print("Lỗi: Client Gemini chưa được khởi tạo. Kiểm tra lại API Key.")
                 return HttpResponse("OK", status=200)
 
             # -----------------------------------------------------------------
@@ -130,11 +140,11 @@ def telegram_ai_webhook(request):
                         })
                         
                     except Exception as json_err:
-                        print("Lỗi parse JSON từ AI:", json_err)
+                        print("Lỗi parse JSON từ AI hoặc lỗi đồng bộ Cloudinary:", json_err)
                         error_url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
                         requests.post(error_url, json={
                             "chat_id": chat_id,
-                            "text": "❌ Lỗi cấu trúc bài viết từ AI. Vui lòng gửi lại ảnh với từ khóa cụ thể hơn."
+                            "text": "❌ Lỗi cấu trúc bài viết từ AI hoặc Cloudinary quá tải. Vui lòng thử lại sau ít phút."
                         })
 
             # -----------------------------------------------------------------
