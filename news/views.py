@@ -356,10 +356,11 @@ Bạn BẮT BUỘC phải xuất dữ liệu trả về theo đúng định dạ
                                 }
                             ]
                         })
+                        
+                        # --- ĐOẠN ĐÃ ĐƯỢC ĐÍNH CHÍNH LỖI TẠI ĐÂY ---
                         messages.append({
                             "role": "tool",
-                            "call_id": tool_call.id, # Cập nhật chuẩn tham số cho hệ thống tool_call_id
-                            "tool_call_id": tool_call.id,
+                            "tool_call_id": tool_call.id,  # Giữ lại trường chuẩn hóa duy nhất của thư viện Groq/OpenAI
                             "content": search_result
                         })
 
