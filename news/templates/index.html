@@ -4,17 +4,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>THENHDEPTRAI - Tin Tức Thể Thao 24h</title>
+    <title>{% if current_category %}{{ current_category.icon }} {{ current_category.name }} - {% endif %}{% if query %}Tim kiem: {{ query }} - {% endif %}THENHDEPTRAI - Tin Tuc The Thao 24h</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Source+Serif+4:ital,wght=0,300;0,400;0,600;1,400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,400&display=swap" rel="stylesheet">
     <style>
         :root { --red: #c0152a; --red-dark: #96101f; }
         body { font-family: 'Source Serif 4', Georgia, serif; }
         .font-display { font-family: 'Oswald', sans-serif; }
 
-        /* TICKER */
         .ticker-wrap { overflow: hidden; }
         .ticker-track {
             display: flex;
@@ -27,12 +26,10 @@
             100% { transform: translateX(-50%); }
         }
 
-        /* ZOOM on hover */
         .zoom-img { overflow: hidden; }
         .zoom-img img { transition: transform .4s ease; }
         .zoom-img:hover img { transform: scale(1.06); }
 
-        /* LIVE DOT */
         @keyframes pulse-ring {
             0%   { transform: scale(1); opacity: .8; }
             100% { transform: scale(2.4); opacity: 0; }
@@ -46,7 +43,6 @@
             animation: pulse-ring 1.4s ease-out infinite;
         }
 
-        /* SECTION HEADER line */
         .sec-line { border-bottom: 2px solid #c0152a; }
     </style>
 </head>
@@ -58,18 +54,26 @@
             THENH<span class="text-[#c0152a]">DEPTRAI</span>
         </a>
         <nav class="hidden md:flex items-center">
-            <a href="#" class="font-display text-sm text-gray-300 hover:text-white hover:bg-[#c0152a] px-4 py-2 transition-colors tracking-wide">⚽ Bóng đá</a>
-            <a href="#" class="font-display text-sm text-gray-300 hover:text-white hover:bg-[#c0152a] px-4 py-2 transition-colors tracking-wide">🎾 Tennis</a>
-            <a href="#" class="font-display text-sm text-gray-300 hover:text-white hover:bg-[#c0152a] px-4 py-2 transition-colors tracking-wide">🏀 NBA</a>
-            <a href="#" class="font-display text-sm text-gray-300 hover:text-white hover:bg-[#c0152a] px-4 py-2 transition-colors tracking-wide">📅 Lịch thi đấu</a>
+            {% for cat in categories %}
+            <a href="{% url 'category_view' cat.slug %}" class="font-display text-sm {% if current_category and current_category.slug == cat.slug %}text-white bg-[#c0152a]{% else %}text-gray-300 hover:text-white hover:bg-[#c0152a]{% endif %} px-4 py-2 transition-colors tracking-wide">
+                {{ cat.icon }} {{ cat.name }}
+            </a>
+            {% endfor %}
         </nav>
-        <a href="#" class="shrink-0 flex items-center gap-2 bg-[#c0152a] hover:bg-[#96101f] text-white font-display text-sm font-bold px-4 py-2 transition-colors">
-            <span class="relative w-2.5 h-2.5">
-                <span class="live-ring absolute inset-0 rounded-full bg-white opacity-60"></span>
-                <span class="relative block w-2.5 h-2.5 rounded-full bg-white"></span>
-            </span>
-            LIVE 24/7
-        </a>
+        <div class="flex items-center gap-2">
+            <form action="{% url 'search' %}" method="GET" class="hidden md:flex items-center bg-[#1a1a1a] border border-gray-700 focus-within:border-[#c0152a] transition-colors">
+                <input type="text" name="q" value="{{ query }}" placeholder="Tim kiem..."
+                    class="bg-transparent text-white text-xs px-3 py-2 w-36 focus:outline-none">
+                <button type="submit" class="text-gray-400 hover:text-white px-2 text-sm">🔍</button>
+            </form>
+            <a href="#" class="shrink-0 flex items-center gap-2 bg-[#c0152a] hover:bg-[#96101f] text-white font-display text-sm font-bold px-4 py-2 transition-colors">
+                <span class="relative w-2.5 h-2.5">
+                    <span class="live-ring absolute inset-0 rounded-full bg-white opacity-60"></span>
+                    <span class="relative block w-2.5 h-2.5 rounded-full bg-white"></span>
+                </span>
+                LIVE 24/7
+            </a>
+        </div>
     </div>
 </header>
 
@@ -87,11 +91,11 @@
                 {{ score.display }}
             </span>
             {% empty %}
-            <span class="flex items-center gap-2 px-5 border-r border-gray-700 h-9"><span class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>ENG 2 – 1 GER <span class="text-gray-400">(FT)</span></span>
-            <span class="flex items-center gap-2 px-5 border-r border-gray-700 h-9"><span class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>FRA 0 – 0 ITA <span class="text-gray-400">(30')</span></span>
-            <span class="flex items-center gap-2 px-5 border-r border-gray-700 h-9"><span class="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse"></span>VIE 1 – 0 THA <span class="text-gray-400">(HT)</span></span>
-            <span class="flex items-center gap-2 px-5 border-r border-gray-700 h-9"><span class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>ESP 3 – 2 BRA <span class="text-gray-400">(67')</span></span>
-            <span class="flex items-center gap-2 px-5 border-r border-gray-700 h-9"><span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>ARG 1 – 1 POR <span class="text-gray-400">(FT)</span></span>
+            <span class="flex items-center gap-2 px-5 border-r border-gray-700 h-9"><span class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>ENG 2 - 1 GER <span class="text-gray-400">(FT)</span></span>
+            <span class="flex items-center gap-2 px-5 border-r border-gray-700 h-9"><span class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>FRA 0 - 0 ITA <span class="text-gray-400">(30')</span></span>
+            <span class="flex items-center gap-2 px-5 border-r border-gray-700 h-9"><span class="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse"></span>VIE 1 - 0 THA <span class="text-gray-400">(HT)</span></span>
+            <span class="flex items-center gap-2 px-5 border-r border-gray-700 h-9"><span class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>ESP 3 - 2 BRA <span class="text-gray-400">(67')</span></span>
+            <span class="flex items-center gap-2 px-5 border-r border-gray-700 h-9"><span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>ARG 1 - 1 POR <span class="text-gray-400">(FT)</span></span>
             {% endfor %}
         </div>
     </div>
@@ -99,11 +103,28 @@
 
 <main class="max-w-7xl mx-auto px-4 py-6">
 
+    <!-- Search bar mobile -->
+    <form action="{% url 'search' %}" method="GET" class="md:hidden flex mb-4 bg-white border border-gray-300 focus-within:border-[#c0152a] transition-colors">
+        <input type="text" name="q" value="{{ query }}" placeholder="Tim kiem bai viet..."
+            class="bg-transparent text-gray-700 text-sm px-4 py-2.5 flex-1 focus:outline-none">
+        <button type="submit" class="bg-[#c0152a] hover:bg-[#96101f] text-white px-4 text-sm font-bold">🔍</button>
+    </form>
+
+    {% if query %}
     <div class="sec-line flex items-center justify-between pb-2 mb-4">
         <h2 class="font-display text-lg font-bold tracking-widest uppercase text-[#111]">
-            <span class="inline-block w-1.5 h-5 bg-[#c0152a] mr-2 align-middle rounded-sm"></span>Mới nhất
+            <span class="inline-block w-1.5 h-5 bg-[#c0152a] mr-2 align-middle rounded-sm"></span>Ket qua tim kiem: "{{ query }}"
         </h2>
     </div>
+    {% endif %}
+
+    {% if current_category %}
+    <div class="sec-line flex items-center justify-between pb-2 mb-4">
+        <h2 class="font-display text-lg font-bold tracking-widest uppercase text-[#111]">
+            <span class="inline-block w-1.5 h-5 bg-[#c0152a] mr-2 align-middle rounded-sm"></span>{{ current_category.icon }} {{ current_category.name }}
+        </h2>
+    </div>
+    {% endif %}
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
 
@@ -121,9 +142,9 @@
                     {% endif %}
                 </div>
                 <div class="p-4">
-                    {% if first_post.category %}
-                    <span class="font-display text-[#c0152a] text-[11px] font-bold tracking-widest uppercase">{{ first_post.category.name }}</span>
-                    {% endif %}
+                    {% for cat in first_post.categories.all %}
+                    <span class="font-display text-[#c0152a] text-[11px] font-bold tracking-widest uppercase">{{ cat.icon }} {{ cat.name }}</span>
+                    {% endfor %}
                     <h1 class="font-display text-xl md:text-2xl font-bold leading-snug text-[#111] group-hover:text-[#c0152a] transition-colors mt-1">
                         {{ first_post.title }}
                     </h1>
@@ -131,7 +152,7 @@
                         {{ first_post.content|truncatewords:30 }}
                     </p>
                     <p class="text-gray-400 text-xs font-display tracking-wide mt-3">
-                        {{ first_post.created_at|date:"d/m/Y • H:i" }}
+                        {{ first_post.created_at|date:"d/m/Y  H:i" }}
                     </p>
                 </div>
             </a>
@@ -153,9 +174,9 @@
                 </div>
                 <div class="p-3 flex-1 flex flex-col justify-between">
                     <div>
-                        {% if post.category %}
-                        <span class="font-display text-[#c0152a] text-[10px] font-bold tracking-widest uppercase mb-1 block">{{ post.category.name }}</span>
-                        {% endif %}
+                        {% for cat in post.categories.all %}
+                        <span class="font-display text-[#c0152a] text-[10px] font-bold tracking-widest uppercase mb-1 block">{{ cat.icon }} {{ cat.name }}</span>
+                        {% endfor %}
                         <h3 class="font-display text-xs md:text-sm font-bold leading-snug text-[#111] group-hover:text-[#c0152a] transition-colors line-clamp-2">
                             {{ post.title }}
                         </h3>
@@ -168,12 +189,30 @@
 
     </div>
 
+    {% if not latest_posts and not query and not current_category %}
+    <div class="text-center py-20 text-gray-400 font-display tracking-wide">
+        Chua co bai viet nao.
+    </div>
+    {% endif %}
 
+    {% if not latest_posts and query %}
+    <div class="text-center py-20 text-gray-400 font-display tracking-wide">
+        Khong tim thay bai viet nao voi tu khoa "{{ query }}".
+    </div>
+    {% endif %}
+
+    {% if not latest_posts and current_category %}
+    <div class="text-center py-20 text-gray-400 font-display tracking-wide">
+        Chua co bai viet nao trong danh muc {{ current_category.icon }} {{ current_category.name }}.
+    </div>
+    {% endif %}
+
+    {% if not query and not current_category %}
     <div class="sec-line flex items-center justify-between pb-2 mb-4">
         <h2 class="font-display text-lg font-bold tracking-widest uppercase text-[#111]">
-            <span class="inline-block w-1.5 h-5 bg-[#c0152a] mr-2 align-middle rounded-sm"></span>Thịnh hành
+            <span class="inline-block w-1.5 h-5 bg-[#c0152a] mr-2 align-middle rounded-sm"></span>Thinh hanh
         </h2>
-        <a href="#" class="font-display text-xs text-[#c0152a] hover:underline tracking-wide uppercase">Xem tất cả →</a>
+        <a href="#" class="font-display text-xs text-[#c0152a] hover:underline tracking-wide uppercase">Xem tat ca →</a>
     </div>
 
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
@@ -189,9 +228,9 @@
                 {% endif %}
             </div>
             <div class="p-3">
-                {% if post.category %}
-                <span class="font-display text-[#c0152a] text-[10px] font-bold tracking-widest uppercase">{{ post.category.name }}</span>
-                {% endif %}
+                {% for cat in post.categories.all %}
+                <span class="font-display text-[#c0152a] text-[10px] font-bold tracking-widest uppercase">{{ cat.icon }} {{ cat.name }}</span>
+                {% endfor %}
                 <h3 class="font-display text-sm font-bold text-[#111] group-hover:text-[#c0152a] transition-colors leading-snug line-clamp-2 mt-1">
                     {{ post.title }}
                 </h3>
@@ -200,17 +239,16 @@
         </a>
         {% empty %}
         <div class="col-span-4 text-center py-10 text-gray-400 text-sm font-display">
-            Chưa có dữ liệu bài viết thịnh hành.
+            Chua co du lieu bai viet thinh hanh.
         </div>
         {% endfor %}
     </div>
 
-
     <div class="sec-line flex items-center justify-between pb-2 mb-4">
         <h2 class="font-display text-lg font-bold tracking-widest uppercase text-[#111]">
-            <span class="inline-block w-1.5 h-5 bg-[#c0152a] mr-2 align-middle rounded-sm"></span>Tin tức tiêu điểm
+            <span class="inline-block w-1.5 h-5 bg-[#c0152a] mr-2 align-middle rounded-sm"></span>Tin tuc tieu diem
         </h2>
-        <a href="#" class="font-display text-xs text-[#c0152a] hover:underline tracking-wide uppercase">Xem tất cả →</a>
+        <a href="#" class="font-display text-xs text-[#c0152a] hover:underline tracking-wide uppercase">Xem tat ca →</a>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mb-10">
@@ -227,9 +265,9 @@
             </a>
             <div class="p-4 flex flex-col flex-1">
                 <div class="flex items-center gap-2 mb-2">
-                    {% if post.category %}
-                    <span class="font-display bg-[#c0152a] text-white px-2 py-0.5 text-[10px] font-bold tracking-widest uppercase">{{ post.category.name }}</span>
-                    {% endif %}
+                    {% for cat in post.categories.all %}
+                    <span class="font-display bg-[#c0152a] text-white px-2 py-0.5 text-[10px] font-bold tracking-widest uppercase">{{ cat.icon }} {{ cat.name }}</span>
+                    {% endfor %}
                     <span class="text-gray-400 text-[11px]">{{ post.created_at|date:"d/m/Y" }}</span>
                 </div>
                 <a href="{% url 'post_detail' post.pk %}">
@@ -241,17 +279,18 @@
                     {{ post.content|truncatewords:18 }}
                 </p>
                 <div class="mt-3 pt-3 border-t border-gray-100 flex justify-between items-center">
-                    <span class="text-gray-400 text-xs">Thể thao 24h</span>
-                    <a href="{% url 'post_detail' post.pk %}" class="font-display text-xs text-[#c0152a] hover:underline tracking-wide">Xem chi tiết →</a>
+                    <span class="text-gray-400 text-xs">The thao 24h</span>
+                    <a href="{% url 'post_detail' post.pk %}" class="font-display text-xs text-[#c0152a] hover:underline tracking-wide">Xem chi tiet →</a>
                 </div>
             </div>
         </article>
         {% empty %}
         <div class="col-span-3 text-center py-20 text-gray-400 font-display tracking-wide text-sm">
-            Chưa có bài viết tiêu điểm nào · Hãy tích chọn "Tin tiêu điểm" trong trang Admin.
+            Chua co bai viet tieu diem nao · Hay tich chon "Tin tieu diem" trong trang Admin.
         </div>
         {% endfor %}
     </div>
+    {% endif %}
 
 </main>
 
@@ -262,25 +301,24 @@
                 <p class="font-display text-white text-2xl font-bold tracking-widest">
                     THENH<span class="text-[#c0152a]">DEPTRAI</span>
                 </p>
-                <p class="text-gray-500 text-xs mt-1">Tin tức thể thao 24/7 · Cập nhật nhanh nhất</p>
+                <p class="text-gray-500 text-xs mt-1">Tin tuc the thao 24/7 · Cap nhat nhanh nhat</p>
             </div>
             <nav class="flex flex-wrap gap-4">
-                <a href="#" class="font-display text-gray-400 hover:text-white text-xs tracking-wide uppercase transition-colors">⚽ Bóng đá</a>
-                <a href="#" class="font-display text-gray-400 hover:text-white text-xs tracking-wide uppercase transition-colors">🎾 Tennis</a>
-                <a href="#" class="font-display text-gray-400 hover:text-white text-xs tracking-wide uppercase transition-colors">🏀 NBA</a>
-                <a href="#" class="font-display text-gray-400 hover:text-white text-xs tracking-wide uppercase transition-colors">📅 Lịch thi đấu</a>
+                {% for cat in categories %}
+                <a href="{% url 'category_view' cat.slug %}" class="font-display text-gray-400 hover:text-white text-xs tracking-wide uppercase transition-colors">{{ cat.icon }} {{ cat.name }}</a>
+                {% endfor %}
             </nav>
             <form class="flex gap-2" onsubmit="return false;">
-                <input type="email" placeholder="Email của bạn..."
+                <input type="email" placeholder="Email cua ban..."
                     class="bg-[#1a1a1a] border border-gray-700 text-white text-xs px-4 py-2 w-52 focus:outline-none focus:border-[#c0152a]">
                 <button class="bg-[#c0152a] hover:bg-[#96101f] text-white font-display text-xs px-4 py-2 tracking-wide transition-colors uppercase font-bold">
-                    Đăng ký
+                    Dang ky
                 </button>
             </form>
         </div>
         <div class="border-t border-gray-800 mt-8 pt-6 text-center">
             <p class="text-gray-600 text-xs">
-                &copy; {% now "Y" %} THENHDEPTRAI · Thiết kế bởi <span class="text-[#c0152a]">Thenh Phóng Viên 24/24</span>
+                &copy; {% now "Y" %} THENHDEPTRAI · Thiet ke boi <span class="text-[#c0152a]">Thenh Phong Vien 24/24</span>
             </p>
         </div>
     </div>

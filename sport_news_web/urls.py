@@ -12,19 +12,20 @@ urlpatterns = [
     # HOME
     path('', views.home, name='home'),
 
+    # DANH MỤC
+    path('category/<slug:slug>/', views.category_view, name='category_view'),
+
+    # TÌM KIẾM
+    path('search/', views.search, name='search'),
+
     # CHI TIẾT BÀI VIẾT
-    path(
-        'post/<int:pk>/',
-        views.post_detail,
-        name='post_detail'
-    ),
+    path('post/<int:pk>/', views.post_detail, name='post_detail'),
+
+    # BÌNH LUẬN
+    path('post/<int:pk>/comment/', views.add_comment, name='add_comment'),
 
     # TELEGRAM WEBHOOK
-    path(
-        'telegram-webhook/',
-        views.telegram_ai_webhook,
-        name='telegram_ai_webhook'
-    ),
+    path('telegram-webhook/', views.telegram_ai_webhook, name='telegram_ai_webhook'),
 ]
 
 # MEDIA FILES
