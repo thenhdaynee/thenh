@@ -24,6 +24,12 @@ urlpatterns = [
     # BÌNH LUẬN
     path('post/<int:pk>/comment/', views.add_comment, name='add_comment'),
 
+    # TẤT CẢ BÀI VIẾT
+    path('posts/', views.all_posts, name='all_posts'),
+
+    # NEWSLETTER
+    path('subscribe/', views.subscribe_newsletter, name='subscribe_newsletter'),
+
     # CHAT API (Web Widget)
     path('chat-api/', views.chat_api, name='chat_api'),
 

@@ -7,6 +7,7 @@
     <title>{{ post.title }} - THENHDEPTRAI</title>
 
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23c0152a'/><text x='50' y='70' text-anchor='middle' font-size='60' font-weight='bold' fill='white' font-family='Arial'>T</text></svg>">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -26,6 +27,18 @@
             white-space: pre-line;
             word-break: break-word;
         }
+
+        .ticker-wrap { overflow: hidden; }
+        .ticker-track {
+            display: flex;
+            animation: ticker-scroll 28s linear infinite;
+            width: max-content;
+        }
+        .ticker-wrap:hover .ticker-track { animation-play-state: paused; }
+        @keyframes ticker-scroll {
+            0%   { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
     </style>
 </head>
 <body class="bg-[#f4f5f7] text-[#1a1a1a] antialiased">
@@ -35,11 +48,44 @@
         <a href="/" class="text-2xl font-bold tracking-widest text-white" style="font-family: 'Oswald', sans-serif;">
             THENH<span class="text-[#c0152a]">DEPTRAI</span>
         </a>
-        <a href="/" class="text-xs font-semibold text-gray-400 hover:text-[#c0152a] uppercase tracking-wider transition-colors duration-200">
-            ← Quay lai trang chu
+        <div class="flex items-center gap-3">
+            <a href="/" class="text-xs font-semibold text-gray-400 hover:text-[#c0152a] uppercase tracking-wider transition-colors duration-200">
+                ← Trang chu
+            </a>
+            <button id="hamburger-detail" class="md:hidden text-white text-2xl p-1 leading-none" aria-label="Menu">☰</button>
+        </div>
+    </div>
+    <div id="mobile-menu-detail" class="hidden md:hidden bg-[#0f0f0f] border-t border-gray-800 px-4 pb-4">
+        <form action="{% url 'search' %}" method="GET" class="flex mb-3 mt-3 bg-[#1a1a1a] border border-gray-700 focus-within:border-[#c0152a] transition-colors">
+            <input type="text" name="q" placeholder="Tim kiem..."
+                class="bg-transparent text-white text-xs px-3 py-2.5 flex-1 focus:outline-none">
+            <button type="submit" class="text-gray-400 hover:text-white px-3 text-sm">🔍</button>
+        </form>
+        {% for cat in categories %}
+        <a href="{% url 'category_view' cat.slug %}" class="block font-display text-sm text-gray-300 hover:text-white hover:bg-[#c0152a] px-4 py-2.5 transition-colors tracking-wide rounded">
+            {{ cat.icon }} {{ cat.name }}
         </a>
+        {% endfor %}
     </div>
 </header>
+
+<div class="bg-[#1a1a1a] border-b-2 border-[#c0152a] h-9 flex items-center">
+    <div class="shrink-0 bg-[#c0152a] h-full flex items-center px-4">
+        <span class="font-display text-white text-xs font-bold tracking-widest">LIVE</span>
+    </div>
+    <div class="ticker-wrap flex-1 h-full flex items-center">
+        <div class="ticker-track text-white text-xs font-display tracking-wide gap-0">
+            {% for score in live_scores %}
+            <span class="flex items-center gap-2 px-5 border-r border-gray-700 h-9">
+                {% if score.status == 'live' %}<span class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>
+                {% elif score.status == 'ht' %}<span class="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse"></span>
+                {% else %}<span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>{% endif %}
+                {{ score.display }}
+            </span>
+            {% endfor %}
+        </div>
+    </div>
+</div>
 
 <main class="max-w-3xl mx-auto px-4 sm:px-6 py-10 bg-white my-8 shadow-[0_2px_20px_rgba(0,0,0,0.04)] rounded-xl border border-gray-100">
     <article>
@@ -120,5 +166,12 @@
 </footer>
 
 {% include 'partials/chat_widget.html' %}
+
+<script>
+document.getElementById('hamburger-detail')?.addEventListener('click', function() {
+    document.getElementById('mobile-menu-detail').classList.toggle('hidden');
+});
+</script>
+
 </body>
 </html>

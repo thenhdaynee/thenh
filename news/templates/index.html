@@ -9,6 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,400&display=swap" rel="stylesheet">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23c0152a'/><text x='50' y='70' text-anchor='middle' font-size='60' font-weight='bold' fill='white' font-family='Arial'>T</text></svg>">
     <style>
         :root { --red: #c0152a; --red-dark: #96101f; }
         body { font-family: 'Source Serif 4', Georgia, serif; }
@@ -73,7 +74,20 @@
                 </span>
                 LIVE 24/7
             </a>
+            <button id="hamburger" class="md:hidden text-white text-2xl p-1 leading-none" aria-label="Menu">☰</button>
         </div>
+    </div>
+    <div id="mobile-menu" class="hidden md:hidden bg-[#0f0f0f] border-t border-gray-800 px-4 pb-4">
+        <form action="{% url 'search' %}" method="GET" class="flex mb-3 mt-3 bg-[#1a1a1a] border border-gray-700 focus-within:border-[#c0152a] transition-colors">
+            <input type="text" name="q" value="{{ query }}" placeholder="Tim kiem..."
+                class="bg-transparent text-white text-xs px-3 py-2.5 flex-1 focus:outline-none">
+            <button type="submit" class="text-gray-400 hover:text-white px-3 text-sm">🔍</button>
+        </form>
+        {% for cat in categories %}
+        <a href="{% url 'category_view' cat.slug %}" class="block font-display text-sm text-gray-300 hover:text-white hover:bg-[#c0152a] px-4 py-2.5 transition-colors tracking-wide rounded">
+            {{ cat.icon }} {{ cat.name }}
+        </a>
+        {% endfor %}
     </div>
 </header>
 
@@ -212,7 +226,7 @@
         <h2 class="font-display text-lg font-bold tracking-widest uppercase text-[#111]">
             <span class="inline-block w-1.5 h-5 bg-[#c0152a] mr-2 align-middle rounded-sm"></span>Thinh hanh
         </h2>
-        <a href="#" class="font-display text-xs text-[#c0152a] hover:underline tracking-wide uppercase">Xem tat ca →</a>
+        <a href="{% url 'all_posts' %}?sort=trending" class="font-display text-xs text-[#c0152a] hover:underline tracking-wide uppercase">Xem tat ca →</a>
     </div>
 
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
@@ -248,7 +262,7 @@
         <h2 class="font-display text-lg font-bold tracking-widest uppercase text-[#111]">
             <span class="inline-block w-1.5 h-5 bg-[#c0152a] mr-2 align-middle rounded-sm"></span>Tin tuc tieu diem
         </h2>
-        <a href="#" class="font-display text-xs text-[#c0152a] hover:underline tracking-wide uppercase">Xem tat ca →</a>
+        <a href="{% url 'all_posts' %}?sort=featured" class="font-display text-xs text-[#c0152a] hover:underline tracking-wide uppercase">Xem tat ca →</a>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mb-10">
@@ -308,10 +322,10 @@
                 <a href="{% url 'category_view' cat.slug %}" class="font-display text-gray-400 hover:text-white text-xs tracking-wide uppercase transition-colors">{{ cat.icon }} {{ cat.name }}</a>
                 {% endfor %}
             </nav>
-            <form class="flex gap-2" onsubmit="return false;">
-                <input type="email" placeholder="Email cua ban..."
+            <form id="newsletter-form" class="flex gap-2">
+                <input type="email" id="nl-email" placeholder="Email cua ban..."
                     class="bg-[#1a1a1a] border border-gray-700 text-white text-xs px-4 py-2 w-52 focus:outline-none focus:border-[#c0152a]">
-                <button class="bg-[#c0152a] hover:bg-[#96101f] text-white font-display text-xs px-4 py-2 tracking-wide transition-colors uppercase font-bold">
+                <button type="submit" class="bg-[#c0152a] hover:bg-[#96101f] text-white font-display text-xs px-4 py-2 tracking-wide transition-colors uppercase font-bold">
                     Dang ky
                 </button>
             </form>
@@ -325,5 +339,45 @@
 </footer>
 
 {% include 'partials/chat_widget.html' %}
+
+<div id="nl-toast" class="fixed bottom-28 right-6 z-[9999] bg-[#1a1a1a] border border-gray-700 text-white text-sm px-5 py-3 rounded-lg shadow-lg hidden font-display tracking-wide"></div>
+
+<script>
+document.getElementById('hamburger')?.addEventListener('click', function() {
+    document.getElementById('mobile-menu').classList.toggle('hidden');
+});
+
+document.getElementById('newsletter-form')?.addEventListener('submit', function(e) {
+    e.preventDefault();
+    var email = document.getElementById('nl-email').value.trim();
+    if (!email || email.indexOf('@') === -1) {
+        showToast('Email khong hop le.', true);
+        return;
+    }
+    fetch('/subscribe/', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({email: email})
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+        showToast(d.message, !d.ok);
+        if (d.ok) document.getElementById('nl-email').value = '';
+    })
+    .catch(function() {
+        showToast('Loi ket noi. Vui long thu lai.', true);
+    });
+});
+
+function showToast(msg, isError) {
+    var t = document.getElementById('nl-toast');
+    t.textContent = msg;
+    t.className = 'fixed bottom-28 right-6 z-[9999] border text-sm px-5 py-3 rounded-lg shadow-lg font-display tracking-wide ' +
+        (isError ? 'bg-red-900 border-red-700 text-red-200' : 'bg-green-900 border-green-700 text-green-200');
+    t.classList.remove('hidden');
+    setTimeout(function() { t.classList.add('hidden'); }, 4000);
+}
+</script>
+
 </body>
 </html>

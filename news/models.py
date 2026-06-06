@@ -42,3 +42,15 @@ class Comment(models.Model):
 
     def __str__(self):
         return f"{self.author_name} - {self.post.title[:30]}"
+
+
+class Subscriber(models.Model):
+    email = models.EmailField(unique=True, verbose_name="Email")
+    subscribed_at = models.DateTimeField(auto_now_add=True, verbose_name="Ngày đăng ký")
+
+    class Meta:
+        verbose_name = "Người đăng ký"
+        verbose_name_plural = "Người đăng ký newsletter"
+
+    def __str__(self):
+        return self.email
