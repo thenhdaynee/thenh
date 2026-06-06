@@ -7,7 +7,7 @@ import requests
 from groq import Groq
 
 from django.shortcuts import render, get_object_or_404, redirect
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib import messages
 from django.db.models import Q
@@ -103,6 +103,109 @@ def add_comment(request, pk):
         else:
             messages.error(request, 'Vui lòng điền đầy đủ tên và nội dung bình luận.')
     return redirect('post_detail', pk=pk)
+
+
+# =========================================================
+# CHAT API (Web)
+# =========================================================
+
+@csrf_exempt
+def chat_api(request):
+    if request.method != "POST":
+        return JsonResponse({"error": "Method not allowed"}, status=405)
+
+    if not client:
+        return JsonResponse({"error": "AI chua duoc cau hinh"}, status=503)
+
+    try:
+        data = json.loads(request.body)
+        user_text = data.get("message", "").strip()
+    except (json.JSONDecodeError, AttributeError):
+        return JsonResponse({"error": "Du lieu khong hop le"}, status=400)
+
+    if not user_text:
+        return JsonResponse({"error": "Vui long nhap cau hoi"}, status=400)
+
+    current_time = time.time()
+    if current_time - LAST_REQUEST_TIME < 3:
+        return JsonResponse({"error": "Vui long cho 3 giay giua cac cau hoi"}, status=429)
+    LAST_REQUEST_TIME = current_time
+
+    reply = "Tro ly AI hien tai dang ban xu ly du lieu."
+
+    for attempt in range(3):
+        try:
+            messages = [
+                {
+                    "role": "system",
+                    "content": (
+                        "Ban la chuyen gia tro ly AI the thao thong minh hang dau. "
+                        "Neu nguoi dung hoi ve ket qua tran dau, tin tuc chuyen nhuong, bang xep hang "
+                        "hoac bat cu su kien nao moi dien ra gan day, ban BAT BUOC phai dung cong cu "
+                        "web_search de cap nhat thong tin chinh xac nhat truoc khi tra loi. "
+                        "Luon phan hoi bang tieng Viet ngan gon, suc tich, di thang vao van de va co so lieu chung minh."
+                    )
+                },
+                {
+                    "role": "user",
+                    "content": user_text
+                }
+            ]
+
+            response1 = client.chat.completions.create(
+                model=MODEL_CHAT,
+                messages=messages,
+                tools=[WEB_SEARCH_TOOL],
+                tool_choice="auto",
+                max_tokens=1000
+            )
+
+            msg = response1.choices[0].message
+
+            if msg.tool_calls:
+                tool_call = msg.tool_calls[0]
+                search_query = json.loads(tool_call.function.arguments).get("query", user_text)
+
+                search_result = do_web_search(search_query)
+
+                messages.append({
+                    "role": "assistant",
+                    "content": msg.content or "",
+                    "tool_calls": [
+                        {
+                            "id": tool_call.id,
+                            "type": "function",
+                            "function": {
+                                "name": "web_search",
+                                "arguments": tool_call.function.arguments
+                            }
+                        }
+                    ]
+                })
+
+                messages.append({
+                    "role": "tool",
+                    "tool_call_id": tool_call.id,
+                    "content": search_result
+                })
+
+                response2 = client.chat.completions.create(
+                    model=MODEL_CHAT,
+                    messages=messages,
+                    max_tokens=1000
+                )
+                reply = response2.choices[0].message.content
+
+            else:
+                reply = msg.content or "Truc trac: Khong the tao cau tra loi."
+
+            break
+
+        except Exception as chat_error:
+            print(f"CHAT API ERROR ATTEMPT {attempt}:", chat_error)
+            time.sleep(4)
+
+    return JsonResponse({"reply": reply})
 
 
 # =========================================================
