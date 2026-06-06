@@ -322,10 +322,20 @@
             body: JSON.stringify({message: text})
         })
         .then(function(r) {
-            if (!r.ok) {
-                return r.json().then(function(d) { throw new Error(d.error || 'Loi may chu'); });
-            }
-            return r.json();
+            return r.text().then(function(text) {
+                try {
+                    var data = JSON.parse(text);
+                    if (!r.ok) {
+                        throw new Error(data.error || 'Loi may chu (ma ' + r.status + ')');
+                    }
+                    return data;
+                } catch (e) {
+                    if (e instanceof SyntaxError) {
+                        throw new Error('May chu tra ve trang HTML (ma ' + r.status + '). Vui long thu lai sau.');
+                    }
+                    throw e;
+                }
+            });
         })
         .then(function(data) {
             removeLoading();

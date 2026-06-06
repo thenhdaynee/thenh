@@ -111,6 +111,8 @@ def add_comment(request, pk):
 
 @csrf_exempt
 def chat_api(request):
+    global LAST_CHAT_API_TIME
+
     if request.method != "POST":
         return JsonResponse({"error": "Method not allowed"}, status=405)
 
@@ -127,9 +129,9 @@ def chat_api(request):
         return JsonResponse({"error": "Vui long nhap cau hoi"}, status=400)
 
     current_time = time.time()
-    if current_time - LAST_REQUEST_TIME < 3:
+    if current_time - LAST_CHAT_API_TIME < 3:
         return JsonResponse({"error": "Vui long cho 3 giay giua cac cau hoi"}, status=429)
-    LAST_REQUEST_TIME = current_time
+    LAST_CHAT_API_TIME = current_time
 
     reply = "Tro ly AI hien tai dang ban xu ly du lieu."
 
@@ -217,6 +219,7 @@ TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 YOUR_TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 REQUEST_TIMEOUT = 25
 LAST_REQUEST_TIME = 0
+LAST_CHAT_API_TIME = 0
 PROCESSED_UPDATES = set()
 WEB_URL = "https://thenh-tin-tuc-the-thao.onrender.com/"
 
@@ -280,24 +283,37 @@ def send_telegram_keyboard(chat_id, text, options):
 
 def do_web_search(query):
     try:
-        url = f"https://api.duckduckgo.com/?q={requests.utils.quote(query)}&format=json&no_html=1&skip_disambig=1"
-        res = requests.get(url, timeout=10).json()
+        url = "https://html.duckduckgo.com/html/"
+        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+        res = requests.post(url, data={"q": query}, headers=headers, timeout=15)
+        res.raise_for_status()
 
-        results = []
-        if res.get("AbstractText"):
-            results.append(res["AbstractText"])
+        import re, html as html_mod
+        snippets = re.findall(
+            r'<a rel="nofollow" class="result__snippet"[^>]*>(.*?)</a>',
+            res.text, re.DOTALL
+        )[:5]
 
-        for topic in res.get("RelatedTopics", [])[:3]:
-            if isinstance(topic, dict) and topic.get("Text"):
-                results.append(topic["Text"])
+        if not snippets:
+            snippets = re.findall(
+                r'class="result__snippet"[^>]*>(.*?)</(?:a|span|td)',
+                res.text, re.DOTALL
+            )[:5]
 
-        if results:
-            return "\n".join(results)
-        return "Khong tim thay ket qua tim kiem truc tuyen phu hop."
+        clean = []
+        for s in snippets:
+            text = re.sub(r'<[^>]+>', '', s)
+            text = html_mod.unescape(text).strip()
+            if text:
+                clean.append(text)
+
+        if clean:
+            return "\n\n".join(clean)
+        return "Khong tim thay ket qua tren web."
 
     except Exception as e:
         print("WEB SEARCH ERROR:", e)
-        return "Loi trong qua trinh ket noi cong tim kiem truc tuyen."
+        return "Loi trong qua trinh tim kiem web."
 
 
 # =========================================================
