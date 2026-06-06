@@ -133,6 +133,8 @@ def chat_api(request):
         return JsonResponse({"error": "Vui long cho 3 giay giua cac cau hoi"}, status=429)
     LAST_CHAT_API_TIME = current_time
 
+    search_result = do_web_search(user_text)
+
     reply = "Tro ly AI hien tai dang ban xu ly du lieu."
 
     for attempt in range(3):
@@ -142,65 +144,23 @@ def chat_api(request):
                     "role": "system",
                     "content": (
                         "Ban la chuyen gia tro ly AI the thao thong minh hang dau. "
-                        "Neu nguoi dung hoi ve ket qua tran dau, tin tuc chuyen nhuong, bang xep hang "
-                        "hoac bat cu su kien nao moi dien ra gan day, ban BAT BUOC phai dung cong cu "
-                        "web_search de cap nhat thong tin chinh xac nhat truoc khi tra loi. "
-                        "Luon phan hoi bang tieng Viet ngan gon, suc tich, di thang vao van de va co so lieu chung minh."
+                        "Duoi day la du lieu tim kiem tu web, hay tra loi cau hoi cua nguoi dung "
+                        "dua tren du lieu do. Luon phan hoi bang tieng Viet ngan gon, di thang vao van de, "
+                        "chinh xac va co so lieu chung minh."
                     )
                 },
                 {
                     "role": "user",
-                    "content": user_text
+                    "content": f"Du lieu tim kiem tu web:\n{search_result}\n\nCau hoi: {user_text}"
                 }
             ]
 
-            response1 = client.chat.completions.create(
+            response = client.chat.completions.create(
                 model=MODEL_CHAT,
                 messages=messages,
-                tools=[WEB_SEARCH_TOOL],
-                tool_choice="auto",
                 max_tokens=1000
             )
-
-            msg = response1.choices[0].message
-
-            if msg.tool_calls:
-                tool_call = msg.tool_calls[0]
-                search_query = json.loads(tool_call.function.arguments).get("query", user_text)
-
-                search_result = do_web_search(search_query)
-
-                messages.append({
-                    "role": "assistant",
-                    "content": msg.content or "",
-                    "tool_calls": [
-                        {
-                            "id": tool_call.id,
-                            "type": "function",
-                            "function": {
-                                "name": "web_search",
-                                "arguments": tool_call.function.arguments
-                            }
-                        }
-                    ]
-                })
-
-                messages.append({
-                    "role": "tool",
-                    "tool_call_id": tool_call.id,
-                    "content": search_result
-                })
-
-                response2 = client.chat.completions.create(
-                    model=MODEL_CHAT,
-                    messages=messages,
-                    max_tokens=1000
-                )
-                reply = response2.choices[0].message.content
-
-            else:
-                reply = msg.content or "Truc trac: Khong the tao cau tra loi."
-
+            reply = response.choices[0].message.content
             break
 
         except Exception as chat_error:
@@ -234,51 +194,6 @@ else:
     print("=== KHONG TIM THAY GROQ_API_KEY ===")
 
 client = Groq(api_key=GROQ_API_KEY) if GROQ_API_KEY else None
-
-WEB_SEARCH_TOOL = {
-    "type": "function",
-    "function": {
-        "name": "web_search",
-        "description": "Search the web for current information, news, sports results, and real-time data",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "query": {
-                    "type": "string",
-                    "description": "The search query"
-                }
-            },
-            "required": ["query"]
-        }
-    }
-}
-
-
-def send_telegram_message(chat_id, text):
-    try:
-        requests.post(
-            f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
-            json={"chat_id": chat_id, "text": text},
-            timeout=REQUEST_TIMEOUT
-        )
-    except Exception as e:
-        print("SEND MSG ERROR:", e)
-
-
-def send_telegram_keyboard(chat_id, text, options):
-    try:
-        buttons = [[{"text": opt, "callback_data": f"cat_{opt}"}] for opt in options]
-        requests.post(
-            f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
-            json={
-                "chat_id": chat_id,
-                "text": text,
-                "reply_markup": {"keyboard": buttons, "one_time_keyboard": True, "resize_keyboard": True}
-            },
-            timeout=REQUEST_TIMEOUT
-        )
-    except Exception as e:
-        print("SEND KEYBOARD ERROR:", e)
 
 
 def do_web_search(query):
@@ -502,6 +417,9 @@ Trong do category phai la mot trong cac slug sau: {cat_list}. Hay tu dong xac di
                 )
                 return HttpResponse("OK", status=200)
 
+            search_result = do_web_search(user_text)
+            send_telegram_message(chat_id, "Dang tra loi...")
+
             bot_reply_text = "Tro ly AI hien tai dang ban xu ly du lieu."
 
             for attempt in range(3):
@@ -511,69 +429,23 @@ Trong do category phai la mot trong cac slug sau: {cat_list}. Hay tu dong xac di
                             "role": "system",
                             "content": (
                                 "Ban la chuyen gia tro ly AI the thao thong minh hang dau. "
-                                "Neu nguoi dung hoi ve ket qua tran dau, tin tuc chuyen nhuong, bang xep hang "
-                                "hoac bat cu su kien nao moi dien ra gan day, ban BAT BUOC phai dung cong cu "
-                                "web_search de cap nhat thong tin chinh xac nhat truoc khi tra loi. "
-                                "Luon phan hoi bang tieng Viet ngan gon, suc tich, di thang vao van de va co so lieu chung minh."
+                                "Duoi day la du lieu tim kiem tu web, hay tra loi cau hoi cua nguoi dung "
+                                "dua tren du lieu do. Luon phan hoi bang tieng Viet ngan gon, di thang vao van de, "
+                                "chinh xac va co so lieu chung minh."
                             )
                         },
                         {
                             "role": "user",
-                            "content": user_text
+                            "content": f"Du lieu tim kiem tu web:\n{search_result}\n\nCau hoi: {user_text}"
                         }
                     ]
 
-                    response1 = client.chat.completions.create(
+                    response = client.chat.completions.create(
                         model=MODEL_CHAT,
                         messages=messages,
-                        tools=[WEB_SEARCH_TOOL],
-                        tool_choice="auto",
                         max_tokens=1000
                     )
-
-                    msg = response1.choices[0].message
-
-                    if msg.tool_calls:
-                        send_telegram_message(chat_id, "Dang tim kiem thong tin moi nhat tren Internet...")
-
-                        tool_call = msg.tool_calls[0]
-                        search_query = json.loads(tool_call.function.arguments).get("query", user_text)
-                        print("EXECUTE SEARCH QUERY:", search_query)
-
-                        search_result = do_web_search(search_query)
-                        print("SEARCH ENGINE RESULT SUMMARY:", str(search_result)[:150])
-
-                        messages.append({
-                            "role": "assistant",
-                            "content": msg.content or "",
-                            "tool_calls": [
-                                {
-                                    "id": tool_call.id,
-                                    "type": "function",
-                                    "function": {
-                                        "name": "web_search",
-                                        "arguments": tool_call.function.arguments
-                                    }
-                                }
-                            ]
-                        })
-
-                        messages.append({
-                            "role": "tool",
-                            "tool_call_id": tool_call.id,
-                            "content": search_result
-                        })
-
-                        response2 = client.chat.completions.create(
-                            model=MODEL_CHAT,
-                            messages=messages,
-                            max_tokens=1000
-                        )
-                        bot_reply_text = response2.choices[0].message.content
-
-                    else:
-                        bot_reply_text = msg.content or "Truc trac: Khong the tao cau tra loi."
-
+                    bot_reply_text = response.choices[0].message.content
                     break
 
                 except Exception as chat_error:
