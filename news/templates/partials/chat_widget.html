@@ -215,7 +215,7 @@
 </style>
 
 <div id="ai-chat-widget">
-    <button id="ai-chat-btn" aria-label="Mo tro ly AI">
+    <button id="ai-chat-btn" aria-label="Mở trợ lý AI">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
             <line x1="9" y1="10" x2="15" y2="10"/>
@@ -230,18 +230,18 @@
                     <circle cx="12" cy="12" r="10"/>
                     <path d="M12 6v6l4 2"/>
                 </svg>
-                AI Tro ly The thao
+                AI Trợ lý Thể thao
                 <span></span>
             </h3>
             <button id="ai-chat-close">&times;</button>
         </div>
         <div id="ai-chat-msgs">
             <div class="ai-msg bot">
-                Chao ban! Minh la tro ly AI The thao cua <strong>THENHDEPTRAI</strong>. Ban co the hoi toi bat ky tin tuc the thao, ket qua tran dau, chuyen nhuong moi nhat!
+                Chào bạn! Minh la trợ lý AI Thể thao cua <strong>THENHDEPTRAI</strong>. Bạn có thể hỏi tôi bat ky tin tức thể thao, ket qua tran dau, chuyen nhuong mới nhất!
             </div>
         </div>
         <div id="ai-chat-input-wrap">
-            <input id="ai-chat-input" type="text" placeholder="Nhap cau hoi the thao..." autocomplete="off">
+            <input id="ai-chat-input" type="text" placeholder="Nhập câu hỏi thể thao..." autocomplete="off">
             <button id="ai-chat-send" aria-label="Gui">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <line x1="22" y1="2" x2="11" y2="13"/>
@@ -296,7 +296,7 @@
         var spinner = document.createElement('span');
         spinner.className = 'ai-spinner';
         div.appendChild(spinner);
-        div.appendChild(document.createTextNode(' Dang tra loi...'));
+        div.appendChild(document.createTextNode(' Đang trả lời...'));
         msgsEl.appendChild(div);
         scrollBottom();
     }

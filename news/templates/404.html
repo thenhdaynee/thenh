@@ -4,8 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>404 - Khong tim thay trang - THENHDEPTRAI</title>
+    <title>404 - Không tìm thấy trang - THENHDEPTRAI</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="{% static 'style.css' %}">
     <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=Source+Serif+4:wght@400;600&display=swap" rel="stylesheet">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23c0152a'/><text x='50' y='70' text-anchor='middle' font-size='60' font-weight='bold' fill='white' font-family='Arial'>T</text></svg>">
     <style>
@@ -14,13 +15,47 @@
     </style>
 </head>
 <body class="bg-[#0f0f0f] min-h-screen flex items-center justify-center">
+    <button id="theme-toggle" aria-label="Chế độ sáng/tối" style="position:fixed;top:16px;right:16px;background:none;border:none;cursor:pointer;font-size:22px;z-index:99;padding:8px;border-radius:50%;background:rgba(255,255,255,0.1);width:40px;height:40px;display:flex;align-items:center;justify-content:center">🌙</button>
+    <button id="back-to-top" aria-label="Lên đầu trang" style="display:none">↑</button>
     <div class="text-center px-6">
         <p class="font-display text-[120px] md:text-[180px] font-bold text-[#c0152a] leading-none">404</p>
-        <h1 class="font-display text-2xl md:text-3xl font-bold text-white mt-4">Trang khong ton tai</h1>
-        <p class="text-gray-400 text-sm md:text-base mt-3 max-w-md mx-auto">Trang ban tim kiem khong ton tai hoac da bi xoa. Hay quay lai trang chu de tiep tuc doc tin tuc.</p>
+        <h1 class="font-display text-2xl md:text-3xl font-bold text-white mt-4">Trang không tồn tại</h1>
+        <p class="text-gray-400 text-sm md:text-base mt-3 max-w-md mx-auto">Trang ban tìm kiếm khong ton tai hoac da bi xoa. Hay quay lai trang chủ de tiep tuc doc tin tức.</p>
         <a href="/" class="inline-block mt-8 font-display bg-[#c0152a] hover:bg-[#96101f] text-white font-bold px-8 py-3 text-sm tracking-widest uppercase transition-colors rounded">
-            ← Quay lai trang chu
+            ← Quay lai trang chủ
         </a>
     </div>
+<script>
+(function() {
+    var toggle = document.getElementById('theme-toggle');
+    if (!toggle) return;
+    var html = document.documentElement;
+    var stored = localStorage.getItem('theme');
+    if (stored === 'dark') {
+        html.setAttribute('data-theme', 'dark');
+        toggle.textContent = '☀️';
+    }
+    toggle.addEventListener('click', function() {
+        if (html.getAttribute('data-theme') === 'dark') {
+            html.removeAttribute('data-theme');
+            localStorage.setItem('theme', 'light');
+            toggle.textContent = '🌙';
+        } else {
+            html.setAttribute('data-theme', 'dark');
+            localStorage.setItem('theme', 'dark');
+            toggle.textContent = '☀️';
+        }
+    });
+})();
+(function() {
+    var btn = document.getElementById('back-to-top');
+    if (!btn) return;
+    window.addEventListener('scroll', function() {
+        if (window.scrollY > 400) { btn.classList.add('show'); }
+        else { btn.classList.remove('show'); }
+    });
+    btn.addEventListener('click', function() { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+})();
+</script>
 </body>
 </html>

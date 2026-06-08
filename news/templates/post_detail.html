@@ -7,6 +7,7 @@
     <title>{{ post.title }} - THENHDEPTRAI</title>
 
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="{% static 'style.css' %}">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23c0152a'/><text x='50' y='70' text-anchor='middle' font-size='60' font-weight='bold' fill='white' font-family='Arial'>T</text></svg>">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -50,14 +51,15 @@
         </a>
         <div class="flex items-center gap-3">
             <a href="/" class="text-xs font-semibold text-gray-400 hover:text-[#c0152a] uppercase tracking-wider transition-colors duration-200">
-                ← Trang chu
+                ← Trang chủ
             </a>
+            <button id="theme-toggle" aria-label="Chế độ sáng/tối" title="Chế độ sáng/tối" style="background:none;border:none;cursor:pointer;font-size:18px;padding:4px 8px;color:#fff">🌙</button>
             <button id="hamburger-detail" class="md:hidden text-white text-2xl p-1 leading-none" aria-label="Menu">☰</button>
         </div>
     </div>
     <div id="mobile-menu-detail" class="hidden md:hidden bg-[#0f0f0f] border-t border-gray-800 px-4 pb-4">
         <form action="{% url 'search' %}" method="GET" class="flex mb-3 mt-3 bg-[#1a1a1a] border border-gray-700 focus-within:border-[#c0152a] transition-colors">
-            <input type="text" name="q" placeholder="Tim kiem..."
+            <input type="text" name="q" placeholder="Tìm kiếm..."
                 class="bg-transparent text-white text-xs px-3 py-2.5 flex-1 focus:outline-none">
             <button type="submit" class="text-gray-400 hover:text-white px-3 text-sm">🔍</button>
         </form>
@@ -89,6 +91,18 @@
 
 <main class="max-w-3xl mx-auto px-4 sm:px-6 py-10 bg-white my-8 shadow-[0_2px_20px_rgba(0,0,0,0.04)] rounded-xl border border-gray-100">
     <article>
+        <!-- Breadcrumb -->
+        <nav class="breadcrumb">
+            <a href="/">Trang chủ</a>
+            <span class="sep">›</span>
+            {% for cat in post.categories.all %}
+            <a href="{% url 'category_view' cat.slug %}">{{ cat.icon }} {{ cat.name }}</a>
+            {% if not forloop.last %}<span class="sep">›</span>{% endif %}
+            {% endfor %}
+            <span class="sep">›</span>
+            <span class="current">{{ post.title }}</span>
+        </nav>
+
         <div class="flex flex-wrap items-center gap-3 mb-6 pb-4 border-b border-gray-100">
             {% for cat in post.categories.all %}
             <span class="bg-[#c0152a] text-white px-2.5 py-1 text-[11px] font-bold uppercase tracking-widest rounded-sm" style="font-family: 'Oswald', sans-serif;">
@@ -96,8 +110,13 @@
             </span>
             {% endfor %}
             <span class="text-gray-400 text-sm font-medium">{{ post.created_at|date:"d/m/Y  H:i" }}</span>
+            <span class="reading-time">⏱ {{ reading_time }} phút đọc</span>
+            <span class="author-tag">
+                <span class="avatar">T</span>
+                THENH SPORTS
+            </span>
             <span class="text-gray-400 text-sm ml-auto flex items-center gap-1 font-medium">
-                👁 {{ post.views_count }} luot xem
+                👁 {{ post.views_count }} lượt xem
             </span>
         </div>
 
@@ -107,11 +126,11 @@
 
         <div class="w-full aspect-[16/9] bg-gray-50 mb-8 overflow-hidden rounded-lg shadow-sm border border-gray-100">
             {% if post.image_file %}
-                <img src="{{ post.image_file.url }}" alt="{{ post.title }}" class="w-full h-full object-cover object-center hover:scale-101 transition-transform duration-500">
+                <img src="{{ post.image_file.url }}" alt="{{ post.title }}" class="w-full h-full object-cover object-center hover:scale-101 transition-transform duration-500" loading="lazy">
             {% elif post.image_url %}
-                <img src="{{ post.image_url }}" alt="{{ post.title }}" class="w-full h-full object-cover object-center hover:scale-101 transition-transform duration-500">
+                <img src="{{ post.image_url }}" alt="{{ post.title }}" class="w-full h-full object-cover object-center hover:scale-101 transition-transform duration-500" loading="lazy">
             {% else %}
-                <img src="https://placehold.co/800x450/e2e8f0/64748b?text=THENH+SPORTS" alt="No image" class="w-full h-full object-cover object-center">
+                <img src="https://placehold.co/800x450/e2e8f0/64748b?text=THENH+SPORTS" alt="No image" class="w-full h-full object-cover object-center" loading="lazy">
             {% endif %}
         </div>
 
@@ -120,30 +139,30 @@
         </div>
     </article>
 
-    <!-- Binh luan -->
+    <!-- Bình luận -->
     <section class="mt-12 pt-8 border-t border-gray-200">
         <h2 class="font-display text-xl font-bold tracking-widest uppercase text-[#111] mb-6" style="font-family: 'Oswald', sans-serif;">
-            <span class="inline-block w-1.5 h-5 bg-[#c0152a] mr-2 align-middle rounded-sm"></span>Binh luan ({{ comments|length }})
+            <span class="inline-block w-1.5 h-5 bg-[#c0152a] mr-2 align-middle rounded-sm"></span>Bình luận ({{ comments|length }})
         </h2>
 
-        <!-- Form binh luan -->
+        <!-- Form bình luận -->
         <form action="{% url 'add_comment' post.pk %}" method="POST" class="bg-gray-50 p-5 rounded-lg border border-gray-200 mb-6">
             {% csrf_token %}
             <div class="mb-3">
-                <input type="text" name="author_name" placeholder="Ten cua ban..." required
+                <input type="text" name="author_name" placeholder="Tên của bạn..." required
                     class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#c0152a]">
             </div>
             <div class="mb-3">
-                <textarea name="content" rows="3" placeholder="Noi dung binh luan..." required
+                <textarea name="content" rows="3" placeholder="Noi dung bình luận..." required
                     class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#c0152a] resize-none"></textarea>
             </div>
             <button type="submit"
                 class="bg-[#c0152a] hover:bg-[#96101f] text-white font-display text-xs font-bold px-5 py-2.5 tracking-wider uppercase transition-colors rounded">
-                Gui binh luan
+                Gui bình luận
             </button>
         </form>
 
-        <!-- Danh sach binh luan -->
+        <!-- Danh sach bình luận -->
         {% for comment in comments %}
         <div class="border-b border-gray-100 py-4 last:border-0">
             <div class="flex items-center gap-2 mb-1">
@@ -156,14 +175,58 @@
             <p class="text-gray-600 text-sm leading-relaxed pl-9">{{ comment.content }}</p>
         </div>
         {% empty %}
-        <p class="text-gray-400 text-sm text-center py-6">Chua co binh luan nao. Hay la nguoi dau tien binh luan!</p>
+        <p class="text-gray-400 text-sm text-center py-6">Chua co bình luận nao. Hãy là người đầu tiên bình luận!</p>
         {% endfor %}
     </section>
 </main>
 
 <footer class="bg-[#0f0f0f] py-8 border-t-4 border-[#c0152a] text-center">
-    <p class="text-gray-500 text-xs tracking-wider uppercase">&copy; {% now "Y" %} THENHDEPTRAI · Bien tap vien the thao AI</p>
+    <p class="text-gray-500 text-xs tracking-wider uppercase">&copy; {% now "Y" %} THENHDEPTRAI · Biên tập viên thể thao AI</p>
 </footer>
+
+    <!-- Social Share -->
+    <div class="social-share">
+        <span>Chia sẻ:</span>
+        <a href="https://www.facebook.com/sharer/sharer.php?u={{ request.build_absolute_uri }}" target="_blank" rel="noopener" class="share-btn facebook">
+            Facebook
+        </a>
+        <a href="https://zalo.me/share?url={{ request.build_absolute_uri }}" target="_blank" rel="noopener" class="share-btn zalo">
+            Zalo
+        </a>
+        <button class="share-btn copy-link" onclick="navigator.clipboard.writeText(window.location.href).then(function(){ alert('Đã sao chép liên kết!'); })">
+            Sao chép liên kết
+        </button>
+    </div>
+
+    <!-- Related Posts -->
+    {% if related_posts %}
+    <div class="related-section">
+        <h3 class="related-title"><span></span>Bài viết liên quan</h3>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {% for rp in related_posts %}
+            <a href="{% url 'post_detail' rp.pk %}" class="group block bg-white border border-gray-200 hover:border-[#c0152a] transition-colors overflow-hidden shadow-sm rounded-lg">
+                <div class="zoom-img aspect-video bg-gray-200">
+                    {% if rp.image_file %}
+                        <img src="{{ rp.image_file.url }}" alt="{{ rp.title }}" class="w-full h-full object-cover" loading="lazy">
+                    {% elif rp.image_url %}
+                        <img src="{{ rp.image_url }}" alt="{{ rp.title }}" class="w-full h-full object-cover" loading="lazy">
+                    {% else %}
+                        <img src="https://placehold.co/400x250/ccc/888?text=..." alt="No Image" class="w-full h-full object-cover" loading="lazy">
+                    {% endif %}
+                </div>
+                <div class="p-3">
+                    <h4 class="font-display text-xs font-bold text-[#111] group-hover:text-[#c0152a] transition-colors leading-snug line-clamp-2">{{ rp.title }}</h4>
+                    <p class="text-gray-400 text-[10px] mt-2">{{ rp.created_at|date:"d/m/Y" }}</p>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+</main>
+
+<button id="back-to-top" aria-label="Lên đầu trang">↑</button>
 
 {% include 'partials/chat_widget.html' %}
 
@@ -171,6 +234,41 @@
 document.getElementById('hamburger-detail')?.addEventListener('click', function() {
     document.getElementById('mobile-menu-detail').classList.toggle('hidden');
 });
+
+(function() {
+    var toggle = document.getElementById('theme-toggle');
+    var html = document.documentElement;
+    var stored = localStorage.getItem('theme');
+    if (stored === 'dark') {
+        html.setAttribute('data-theme', 'dark');
+        toggle.textContent = '☀️';
+    }
+    toggle.addEventListener('click', function() {
+        if (html.getAttribute('data-theme') === 'dark') {
+            html.removeAttribute('data-theme');
+            localStorage.setItem('theme', 'light');
+            toggle.textContent = '🌙';
+        } else {
+            html.setAttribute('data-theme', 'dark');
+            localStorage.setItem('theme', 'dark');
+            toggle.textContent = '☀️';
+        }
+    });
+})();
+
+(function() {
+    var btn = document.getElementById('back-to-top');
+    window.addEventListener('scroll', function() {
+        if (window.scrollY > 400) {
+            btn.classList.add('show');
+        } else {
+            btn.classList.remove('show');
+        }
+    });
+    btn.addEventListener('click', function() {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+})();
 </script>
 
 </body>

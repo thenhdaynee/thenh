@@ -115,11 +115,23 @@ def post_detail(request, pk):
     post.save(update_fields=['views_count'])
     comments = post.comments.all()
     categories = Category.objects.all()
+
+    # Reading time
+    word_count = len(post.content.split())
+    reading_time = max(1, round(word_count / 200))
+
+    # Related posts (same categories, exclude current)
+    related_posts = Post.objects.filter(
+        categories__in=post.categories.all()
+    ).exclude(pk=post.pk).distinct().order_by('-views_count', '-created_at')[:4]
+
     context = {
         'post': post,
         'comments': comments,
         'categories': categories,
         'live_scores': get_live_scores(),
+        'reading_time': reading_time,
+        'related_posts': related_posts,
     }
     return render(request, 'post_detail.html', context)
 

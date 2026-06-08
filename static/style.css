@@ -1,141 +1,350 @@
-/* 1. Cài đặt chung */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+/* =========================================================
+   THENH SPORTS - Custom Styles
+   ========================================================= */
+
+/* ----- VARIABLES ----- */
+:root {
+  --red: #c0152a;
+  --red-dark: #96101f;
+  --red-light: #e81c3a;
+
+  --bg-body: #f0f0f0;
+  --bg-card: #ffffff;
+  --bg-header: #0f0f0f;
+  --bg-footer: #0f0f0f;
+  --bg-section: #f4f5f7;
+  --text-body: #111111;
+  --text-muted: #6b7280;
+  --text-on-dark: #ffffff;
+  --text-secondary: #4b5563;
+  --border-card: #e5e7eb;
+  --border-light: #f0f0f0;
+  --live-bar-bg: #1a1a1a;
+  --search-bg: #1a1a1a;
+  --search-border: #374151;
+  --mobile-menu-bg: #0f0f0f;
+  --footer-text: #6b7280;
+  --footer-border: #1f2937;
+  --skeleton-bg: #e5e7eb;
+  --skeleton-shine: #f3f4f6;
+  --chat-bg: #1a1a1a;
+  --chat-msg-bot: #2a2a2a;
+  --tag-bg: #c0152a;
 }
 
-body {
-    background-color: #f4f4f4;
+[data-theme="dark"] {
+  --bg-body: #111111;
+  --bg-card: #1f1f1f;
+  --bg-header: #0a0a0a;
+  --bg-footer: #0a0a0a;
+  --bg-section: #161616;
+  --text-body: #e5e5e5;
+  --text-muted: #9ca3af;
+  --text-on-dark: #ffffff;
+  --text-secondary: #aaaaaa;
+  --border-card: #333333;
+  --border-light: #2a2a2a;
+  --live-bar-bg: #111111;
+  --search-bg: #111111;
+  --search-border: #444444;
+  --mobile-menu-bg: #0a0a0a;
+  --footer-text: #6b7280;
+  --footer-border: #2a2a2a;
+  --skeleton-bg: #2a2a2a;
+  --skeleton-shine: #3a3a3a;
+  --chat-bg: #111111;
+  --chat-msg-bot: #222222;
+  --tag-bg: #a01222;
 }
 
-/* 2. Thanh Menu (Header) */
-header {
-    background-color: #1a1a1a;
-    color: white;
-    padding: 1rem 5%;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    position: sticky;
-    top: 0;
-    z-index: 1000;
+/* ----- DARK MODE OVERRIDES ----- */
+[data-theme="dark"],
+[data-theme="dark"] body {
+  background: var(--bg-body) !important;
+  color: var(--text-body) !important;
+}
+[data-theme="dark"] .bg-white,
+[data-theme="dark"] .bg-\[white\] {
+  background: var(--bg-card) !important;
+}
+[data-theme="dark"] .bg-\[\#f0f0f0\],
+[data-theme="dark"] .bg-\[\#f4f5f7\] {
+  background: var(--bg-body) !important;
+}
+[data-theme="dark"] .bg-gray-50 {
+  background: var(--bg-section) !important;
+}
+[data-theme="dark"] .border-gray-100,
+[data-theme="dark"] .border-gray-200 {
+  border-color: var(--border-card) !important;
+}
+[data-theme="dark"] .text-\[\#111\],
+[data-theme="dark"] .text-\[\#111111\],
+[data-theme="dark"] .text-\[\#1a1a1a\],
+[data-theme="dark"] .text-\[\#292929\] {
+  color: var(--text-body) !important;
+}
+[data-theme="dark"] .text-gray-500 {
+  color: var(--text-secondary) !important;
+}
+[data-theme="dark"] .text-gray-400 {
+  color: var(--text-muted) !important;
+}
+[data-theme="dark"] .text-gray-600 {
+  color: var(--text-muted) !important;
+}
+[data-theme="dark"] .text-gray-300 {
+  color: #cccccc !important;
+}
+[data-theme="dark"] header,
+[data-theme="dark"] .bg-\[\#0f0f0f\] {
+  background: var(--bg-header) !important;
+}
+[data-theme="dark"] .bg-\[\#1a1a1a\] {
+  background: var(--live-bar-bg) !important;
+}
+[data-theme="dark"] footer {
+  background: var(--bg-footer) !important;
+}
+[data-theme="dark"] .bg-\[\#c0152a\] {
+  background: var(--tag-bg) !important;
+}
+[data-theme="dark"] .shadow-\[0_2px_20px_rgba\(0\,0\,0\,0\.04\)\] {
+  box-shadow: 0 2px 20px rgba(0,0,0,0.2) !important;
 }
 
-.logo {
-    font-size: 1.5rem;
-    font-weight: bold;
-    letter-spacing: 2px;
+/* ----- BACK TO TOP ----- */
+#back-to-top {
+  position: fixed;
+  bottom: 90px;
+  right: 24px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--red);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  z-index: 9997;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 15px rgba(192,21,42,0.35);
+  transition: transform 0.25s, opacity 0.3s, visibility 0.3s;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(10px);
+}
+#back-to-top.show {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+#back-to-top:hover {
+  transform: scale(1.1);
 }
 
-.logo span {
-    color: #e31b23; /* Màu đỏ thể thao */
+/* ----- SKELETON LOADING ----- */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--skeleton-bg) 25%,
+    var(--skeleton-shine) 50%,
+    var(--skeleton-bg) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+  border-radius: 4px;
+}
+@keyframes skeleton-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+.skeleton-text {
+  height: 14px;
+  margin-bottom: 8px;
+  width: 100%;
+}
+.skeleton-text:last-child {
+  width: 60%;
+}
+.skeleton-title {
+  height: 20px;
+  margin-bottom: 12px;
+  width: 80%;
+}
+.skeleton-image {
+  aspect-ratio: 16/9;
+  width: 100%;
+  border-radius: 0;
 }
 
-nav ul {
-    display: flex;
-    list-style: none;
+/* ----- THEME TOGGLE ----- */
+#theme-toggle {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: background 0.2s;
+  line-height: 1;
+}
+#theme-toggle:hover {
+  background: rgba(255,255,255,0.1);
 }
 
-nav ul li {
-    margin-left: 20px;
+/* ----- BREADCRUMB ----- */
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+}
+.breadcrumb a {
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.breadcrumb a:hover {
+  color: var(--red);
+}
+.breadcrumb .sep {
+  color: var(--text-muted);
+  font-size: 10px;
+}
+.breadcrumb .current {
+  color: var(--text-body);
+  font-weight: 600;
+  max-width: 250px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-nav ul li a {
-    color: white;
-    text-decoration: none;
-    font-weight: 500;
-    transition: 0.3s;
+/* ----- READING TIME ----- */
+.reading-time {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
 }
 
-nav ul li a:hover {
-    color: #e31b23;
+/* ----- SOCIAL SHARE ----- */
+.social-share {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-card);
+}
+.social-share span {
+  font-size: 13px;
+  color: var(--text-muted);
+  font-weight: 600;
+  margin-right: 4px;
+}
+.share-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: transform 0.2s, opacity 0.2s;
+  border: none;
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+}
+.share-btn:hover {
+  transform: translateY(-2px);
+}
+.share-btn.facebook {
+  background: #1877f2;
+  color: #fff;
+}
+.share-btn.zalo {
+  background: #0068ff;
+  color: #fff;
+}
+.share-btn.copy-link {
+  background: var(--bg-section);
+  color: var(--text-body);
+  border: 1px solid var(--border-card);
 }
 
-/* 3. Bảng tỉ số (Live Scores) */
-.live-scores {
-    background-color: #333;
-    color: #00ff00; /* Màu xanh lá đặc trưng kết quả */
-    display: flex;
-    overflow-x: auto;
-    padding: 10px;
-    gap: 20px;
-    font-size: 0.9rem;
+/* ----- RELATED POSTS ----- */
+.related-section {
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 2px solid var(--red);
+}
+.related-title {
+  font-family: 'Oswald', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 16px;
+  color: var(--text-body);
+}
+.related-title span {
+  display: inline-block;
+  width: 6px;
+  height: 20px;
+  background: var(--red);
+  margin-right: 10px;
+  vertical-align: middle;
+  border-radius: 2px;
 }
 
-.score-item {
-    white-space: nowrap;
-    border-right: 1px solid #555;
-    padding-right: 20px;
+/* ----- AUTHOR TAG ----- */
+.author-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-muted);
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+}
+.author-tag .avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--red);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
 }
 
-/* 4. Bố cục nội dung chính */
-.container {
-    max-width: 1200px;
-    margin: 20px auto;
-    display: grid;
-    grid-template-columns: 2fr 1fr; /* Chia cột 2/3 và 1/3 */
-    gap: 20px;
-    padding: 0 20px;
-}
-
-/* 5. Tin nổi bật */
-.hero-news {
-    background: white;
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-}
-
-.hero-news img {
-    width: 100%;
-    height: auto;
-    display: block;
-}
-
-.hero-text {
-    padding: 20px;
-}
-
-.category {
-    background: #e31b23;
-    color: white;
-    padding: 3px 10px;
-    font-size: 0.8rem;
-    text-transform: uppercase;
-}
-
-.hero-text h1 {
-    margin: 10px 0;
-    font-size: 1.8rem;
-}
-
-/* 6. Tin phụ (Sidebar) */
-.side-news {
-    background: white;
-    padding: 20px;
-    border-radius: 8px;
-}
-
-.news-card {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 15px;
-    padding-bottom: 15px;
-    border-bottom: 1px solid #eee;
-}
-
-.news-card img {
-    width: 80px;
-    height: 60px;
-    object-fit: cover;
-    border-radius: 4px;
-}
-
-/* Responsive cho điện thoại */
+/* ----- MOBILE ADJUSTMENTS ----- */
 @media (max-width: 768px) {
-    .container {
-        grid-template-columns: 1fr;
-    }
+  .breadcrumb {
+    font-size: 11px;
+  }
+  .breadcrumb .current {
+    max-width: 150px;
+  }
+  .social-share {
+    flex-wrap: wrap;
+  }
+  .share-btn {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
 }

@@ -4,8 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% if current_category %}{{ current_category.icon }} {{ current_category.name }} - {% endif %}{% if query %}Tim kiem: {{ query }} - {% endif %}THENHDEPTRAI - Tin Tuc The Thao 24h</title>
+    <title>{% if current_category %}{{ current_category.icon }} {{ current_category.name }} - {% endif %}{% if query %}Tìm kiếm: {{ query }} - {% endif %}THENHDEPTRAI - Tin Tuc The Thao 24h</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="{% static 'style.css' %}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,400&display=swap" rel="stylesheet">
@@ -63,7 +64,7 @@
         </nav>
         <div class="flex items-center gap-2">
             <form action="{% url 'search' %}" method="GET" class="hidden md:flex items-center bg-[#1a1a1a] border border-gray-700 focus-within:border-[#c0152a] transition-colors">
-                <input type="text" name="q" value="{{ query }}" placeholder="Tim kiem..."
+                <input type="text" name="q" value="{{ query }}" placeholder="Tìm kiếm..."
                     class="bg-transparent text-white text-xs px-3 py-2 w-36 focus:outline-none">
                 <button type="submit" class="text-gray-400 hover:text-white px-2 text-sm">🔍</button>
             </form>
@@ -74,12 +75,13 @@
                 </span>
                 LIVE 24/7
             </a>
+            <button id="theme-toggle" aria-label="Chế độ sáng/tối" title="Chế độ sáng/tối">🌙</button>
             <button id="hamburger" class="md:hidden text-white text-2xl p-1 leading-none" aria-label="Menu">☰</button>
         </div>
     </div>
     <div id="mobile-menu" class="hidden md:hidden bg-[#0f0f0f] border-t border-gray-800 px-4 pb-4">
         <form action="{% url 'search' %}" method="GET" class="flex mb-3 mt-3 bg-[#1a1a1a] border border-gray-700 focus-within:border-[#c0152a] transition-colors">
-            <input type="text" name="q" value="{{ query }}" placeholder="Tim kiem..."
+            <input type="text" name="q" value="{{ query }}" placeholder="Tìm kiếm..."
                 class="bg-transparent text-white text-xs px-3 py-2.5 flex-1 focus:outline-none">
             <button type="submit" class="text-gray-400 hover:text-white px-3 text-sm">🔍</button>
         </form>
@@ -119,7 +121,7 @@
 
     <!-- Search bar mobile -->
     <form action="{% url 'search' %}" method="GET" class="md:hidden flex mb-4 bg-white border border-gray-300 focus-within:border-[#c0152a] transition-colors">
-        <input type="text" name="q" value="{{ query }}" placeholder="Tim kiem bai viet..."
+        <input type="text" name="q" value="{{ query }}" placeholder="Tìm kiếm bai viet..."
             class="bg-transparent text-gray-700 text-sm px-4 py-2.5 flex-1 focus:outline-none">
         <button type="submit" class="bg-[#c0152a] hover:bg-[#96101f] text-white px-4 text-sm font-bold">🔍</button>
     </form>
@@ -127,7 +129,7 @@
     {% if query %}
     <div class="sec-line flex items-center justify-between pb-2 mb-4">
         <h2 class="font-display text-lg font-bold tracking-widest uppercase text-[#111]">
-            <span class="inline-block w-1.5 h-5 bg-[#c0152a] mr-2 align-middle rounded-sm"></span>Ket qua tim kiem: "{{ query }}"
+            <span class="inline-block w-1.5 h-5 bg-[#c0152a] mr-2 align-middle rounded-sm"></span>Ket qua tìm kiếm: "{{ query }}"
         </h2>
     </div>
     {% endif %}
@@ -148,11 +150,11 @@
             <a href="{% url 'post_detail' first_post.pk %}" class="bg-white group block h-full border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
                 <div class="zoom-img aspect-video w-full bg-gray-200">
                     {% if first_post.image_file %}
-                        <img src="{{ first_post.image_file.url }}" alt="{{ first_post.title }}" class="w-full h-full object-cover">
+                        <img src="{{ first_post.image_file.url }}" alt="{{ first_post.title }}" class="w-full h-full object-cover" loading="lazy">
                     {% elif first_post.image_url %}
-                        <img src="{{ first_post.image_url }}" alt="{{ first_post.title }}" class="w-full h-full object-cover">
+                        <img src="{{ first_post.image_url }}" alt="{{ first_post.title }}" class="w-full h-full object-cover" loading="lazy">
                     {% else %}
-                        <img src="https://placehold.co/800x450/ccc/888?text=No+Image" alt="No image" class="w-full h-full object-cover">
+                        <img src="https://placehold.co/800x450/ccc/888?text=No+Image" alt="No image" class="w-full h-full object-cover" loading="lazy">
                     {% endif %}
                 </div>
                 <div class="p-4">
@@ -179,11 +181,11 @@
             <a href="{% url 'post_detail' post.pk %}" class="bg-white border border-gray-200 shadow-sm group flex flex-col justify-between hover:shadow-md transition-all h-full">
                 <div class="zoom-img w-full aspect-video bg-gray-200 shrink-0">
                     {% if post.image_file %}
-                        <img src="{{ post.image_file.url }}" alt="{{ post.title }}" class="w-full h-full object-cover">
+                        <img src="{{ post.image_file.url }}" alt="{{ post.title }}" class="w-full h-full object-cover" loading="lazy">
                     {% elif post.image_url %}
-                        <img src="{{ post.image_url }}" alt="{{ post.title }}" class="w-full h-full object-cover">
+                        <img src="{{ post.image_url }}" alt="{{ post.title }}" class="w-full h-full object-cover" loading="lazy">
                     {% else %}
-                        <img src="https://placehold.co/300x200/ccc/888?text=..." alt="No Image" class="w-full h-full object-cover">
+                        <img src="https://placehold.co/300x200/ccc/888?text=..." alt="No Image" class="w-full h-full object-cover" loading="lazy">
                     {% endif %}
                 </div>
                 <div class="p-3 flex-1 flex flex-col justify-between">
@@ -205,28 +207,28 @@
 
     {% if not latest_posts and not query and not current_category %}
     <div class="text-center py-20 text-gray-400 font-display tracking-wide">
-        Chua co bai viet nao.
+        Chưa có bài viết nào.
     </div>
     {% endif %}
 
     {% if not latest_posts and query %}
     <div class="text-center py-20 text-gray-400 font-display tracking-wide">
-        Khong tim thay bai viet nao voi tu khoa "{{ query }}".
+        Không tìm thấy bai viet nao voi từ khóa "{{ query }}".
     </div>
     {% endif %}
 
     {% if not latest_posts and current_category %}
     <div class="text-center py-20 text-gray-400 font-display tracking-wide">
-        Chua co bai viet nao trong danh muc {{ current_category.icon }} {{ current_category.name }}.
+        Chưa có bài viết nào trong danh muc {{ current_category.icon }} {{ current_category.name }}.
     </div>
     {% endif %}
 
     {% if not query and not current_category %}
     <div class="sec-line flex items-center justify-between pb-2 mb-4">
         <h2 class="font-display text-lg font-bold tracking-widest uppercase text-[#111]">
-            <span class="inline-block w-1.5 h-5 bg-[#c0152a] mr-2 align-middle rounded-sm"></span>Thinh hanh
+            <span class="inline-block w-1.5 h-5 bg-[#c0152a] mr-2 align-middle rounded-sm"></span>Thịnh hành
         </h2>
-        <a href="{% url 'all_posts' %}?sort=trending" class="font-display text-xs text-[#c0152a] hover:underline tracking-wide uppercase">Xem tat ca →</a>
+        <a href="{% url 'all_posts' %}?sort=trending" class="font-display text-xs text-[#c0152a] hover:underline tracking-wide uppercase">Xem tất cả →</a>
     </div>
 
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
@@ -234,11 +236,11 @@
         <a href="{% url 'post_detail' post.pk %}" class="group block bg-white border border-gray-200 hover:border-[#c0152a] transition-colors overflow-hidden shadow-sm">
             <div class="zoom-img aspect-video bg-gray-200">
                 {% if post.image_file %}
-                    <img src="{{ post.image_file.url }}" alt="{{ post.title }}" class="w-full h-full object-cover">
+                    <img src="{{ post.image_file.url }}" alt="{{ post.title }}" class="w-full h-full object-cover" loading="lazy">
                 {% elif post.image_url %}
-                    <img src="{{ post.image_url }}" alt="{{ post.title }}" class="w-full h-full object-cover">
+                    <img src="{{ post.image_url }}" alt="{{ post.title }}" class="w-full h-full object-cover" loading="lazy">
                 {% else %}
-                    <img src="https://placehold.co/400x250/ccc/888?text=..." alt="No Image" class="w-full h-full object-cover">
+                    <img src="https://placehold.co/400x250/ccc/888?text=..." alt="No Image" class="w-full h-full object-cover" loading="lazy">
                 {% endif %}
             </div>
             <div class="p-3">
@@ -253,16 +255,16 @@
         </a>
         {% empty %}
         <div class="col-span-4 text-center py-10 text-gray-400 text-sm font-display">
-            Chua co du lieu bai viet thinh hanh.
+            Chưa có dữ liệu bài viết thịnh hành.
         </div>
         {% endfor %}
     </div>
 
     <div class="sec-line flex items-center justify-between pb-2 mb-4">
         <h2 class="font-display text-lg font-bold tracking-widest uppercase text-[#111]">
-            <span class="inline-block w-1.5 h-5 bg-[#c0152a] mr-2 align-middle rounded-sm"></span>Tin tuc tieu diem
+            <span class="inline-block w-1.5 h-5 bg-[#c0152a] mr-2 align-middle rounded-sm"></span>Tin tức tiêu điểm
         </h2>
-        <a href="{% url 'all_posts' %}?sort=featured" class="font-display text-xs text-[#c0152a] hover:underline tracking-wide uppercase">Xem tat ca →</a>
+        <a href="{% url 'all_posts' %}?sort=featured" class="font-display text-xs text-[#c0152a] hover:underline tracking-wide uppercase">Xem tất cả →</a>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mb-10">
@@ -270,11 +272,11 @@
         <article class="bg-white border border-gray-200 shadow-sm hover:shadow-md hover:border-[#c0152a] transition-all overflow-hidden flex flex-col group">
             <a href="{% url 'post_detail' post.pk %}" class="block zoom-img aspect-video bg-gray-200">
                 {% if post.image_file %}
-                    <img src="{{ post.image_file.url }}" alt="{{ post.title }}" class="w-full h-full object-cover">
+                    <img src="{{ post.image_file.url }}" alt="{{ post.title }}" class="w-full h-full object-cover" loading="lazy">
                 {% elif post.image_url %}
-                    <img src="{{ post.image_url }}" alt="{{ post.title }}" class="w-full h-full object-cover">
+                    <img src="{{ post.image_url }}" alt="{{ post.title }}" class="w-full h-full object-cover" loading="lazy">
                 {% else %}
-                    <img src="https://placehold.co/600x338/ccc/888?text=No+Image" alt="No image" class="w-full h-full object-cover">
+                    <img src="https://placehold.co/600x338/ccc/888?text=No+Image" alt="No image" class="w-full h-full object-cover" loading="lazy">
                 {% endif %}
             </a>
             <div class="p-4 flex flex-col flex-1">
@@ -293,8 +295,8 @@
                     {{ post.content|truncatewords:18 }}
                 </p>
                 <div class="mt-3 pt-3 border-t border-gray-100 flex justify-between items-center">
-                    <span class="text-gray-400 text-xs">The thao 24h</span>
-                    <a href="{% url 'post_detail' post.pk %}" class="font-display text-xs text-[#c0152a] hover:underline tracking-wide">Xem chi tiet →</a>
+                    <span class="text-gray-400 text-xs">Thể thao 24h</span>
+                    <a href="{% url 'post_detail' post.pk %}" class="font-display text-xs text-[#c0152a] hover:underline tracking-wide">Xem chi tiết →</a>
                 </div>
             </div>
         </article>
@@ -315,7 +317,7 @@
                 <p class="font-display text-white text-2xl font-bold tracking-widest">
                     THENH<span class="text-[#c0152a]">DEPTRAI</span>
                 </p>
-                <p class="text-gray-500 text-xs mt-1">Tin tuc the thao 24/7 · Cap nhat nhanh nhat</p>
+                <p class="text-gray-500 text-xs mt-1">Tin tức thể thao 24/7 · Cập nhật nhanh nhất</p>
             </div>
             <nav class="flex flex-wrap gap-4">
                 {% for cat in categories %}
@@ -326,17 +328,19 @@
                 <input type="email" id="nl-email" placeholder="Email cua ban..."
                     class="bg-[#1a1a1a] border border-gray-700 text-white text-xs px-4 py-2 w-52 focus:outline-none focus:border-[#c0152a]">
                 <button type="submit" class="bg-[#c0152a] hover:bg-[#96101f] text-white font-display text-xs px-4 py-2 tracking-wide transition-colors uppercase font-bold">
-                    Dang ky
+                    Đăng ký
                 </button>
             </form>
         </div>
         <div class="border-t border-gray-800 mt-8 pt-6 text-center">
             <p class="text-gray-600 text-xs">
-                &copy; {% now "Y" %} THENHDEPTRAI · Thiet ke boi <span class="text-[#c0152a]">Thenh Phong Vien 24/24</span>
+                &copy; {% now "Y" %} THENHDEPTRAI · Thiết kế bởi <span class="text-[#c0152a]">Thenh Phong Vien 24/24</span>
             </p>
         </div>
     </div>
 </footer>
+
+<button id="back-to-top" aria-label="Lên đầu trang">↑</button>
 
 {% include 'partials/chat_widget.html' %}
 
@@ -377,6 +381,43 @@ function showToast(msg, isError) {
     t.classList.remove('hidden');
     setTimeout(function() { t.classList.add('hidden'); }, 4000);
 }
+
+/* THEME TOGGLE */
+(function() {
+    var toggle = document.getElementById('theme-toggle');
+    var html = document.documentElement;
+    var stored = localStorage.getItem('theme');
+    if (stored === 'dark') {
+        html.setAttribute('data-theme', 'dark');
+        toggle.textContent = '☀️';
+    }
+    toggle.addEventListener('click', function() {
+        if (html.getAttribute('data-theme') === 'dark') {
+            html.removeAttribute('data-theme');
+            localStorage.setItem('theme', 'light');
+            toggle.textContent = '🌙';
+        } else {
+            html.setAttribute('data-theme', 'dark');
+            localStorage.setItem('theme', 'dark');
+            toggle.textContent = '☀️';
+        }
+    });
+})();
+
+/* BACK TO TOP */
+(function() {
+    var btn = document.getElementById('back-to-top');
+    window.addEventListener('scroll', function() {
+        if (window.scrollY > 400) {
+            btn.classList.add('show');
+        } else {
+            btn.classList.remove('show');
+        }
+    });
+    btn.addEventListener('click', function() {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+})();
 </script>
 
 </body>
