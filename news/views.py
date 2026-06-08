@@ -1,6 +1,8 @@
 import json
 import time
 import base64
+import datetime
+import random
 import requests
 
 from django.shortcuts import render, get_object_or_404, redirect
@@ -12,10 +14,11 @@ from django.core.paginator import Paginator
 from django.views.decorators.http import require_POST
 
 import cloudinary.uploader
-from .models import Post, Category, Comment, Subscriber
+from .models import Post, Category, Comment, Subscriber, LiveScore
 from .ai_services import (
     client, chat_with_ai, send_telegram_message,
-    generate_article, LAST_CHAT_API_TIME, LAST_REQUEST_TIME,
+    generate_article, fetch_and_parse_scores,
+    LAST_CHAT_API_TIME, LAST_REQUEST_TIME,
     PROCESSED_UPDATES, REQUEST_TIMEOUT,
     TELEGRAM_BOT_TOKEN, YOUR_TELEGRAM_CHAT_ID, WEB_URL
 )
@@ -25,7 +28,10 @@ from .ai_services import (
 # =========================================================
 
 def get_live_scores():
-    import datetime, random
+    scores_db = LiveScore.objects.filter(match_date=datetime.date.today())
+    if scores_db.exists():
+        return [{"display": f"{s.team_a} {s.score_a} - {s.score_b} {s.team_b}", "status": s.status} for s in scores_db]
+
     today = datetime.date.today()
     base = today.toordinal()
     random.seed(base)
@@ -191,7 +197,6 @@ def all_posts(request):
 @require_POST
 @csrf_exempt
 def subscribe_newsletter(request):
-    import json
     try:
         data = json.loads(request.body)
         email = data.get('email', '').strip()
@@ -217,7 +222,7 @@ def chat_api(request):
         return JsonResponse({"error": "Method not allowed"}, status=405)
 
     if not client:
-        return JsonResponse({"error": "AI chua duoc cau hinh"}, status=503)
+        return JsonResponse({"error": "AI chưa được cấu hình"}, status=503)
 
     try:
         data = json.loads(request.body)
@@ -291,7 +296,7 @@ def telegram_ai_webhook(request):
             photo_file = message["photo"][-1]
             file_id = photo_file["file_id"]
 
-            send_telegram_message(chat_id, "Dang phan tich anh va tien hanh sang tac bai viet...")
+            send_telegram_message(chat_id, "Đang phân tích ảnh và tiến hành sáng tác bài viết...")
 
             file_info_res = requests.get(
                 f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/getFile?file_id={file_id}",
@@ -299,7 +304,7 @@ def telegram_ai_webhook(request):
             ).json()
 
             if not file_info_res.get("ok"):
-                send_telegram_message(chat_id, "Loi: Khong the tai tep hinh anh tu may chu Telegram.")
+                send_telegram_message(chat_id, "Lỗi: Không thể tải tệp hình ảnh từ máy chủ Telegram.")
                 return HttpResponse("OK", status=200)
 
             file_path = file_info_res["result"]["file_path"]
@@ -317,7 +322,7 @@ def telegram_ai_webhook(request):
             result = generate_article(image_base64, keywords, cat_list)
 
             if not result:
-                send_telegram_message(chat_id, "Truc trac ky thuat: He thong phan tich Vision khong phan hoi.")
+                send_telegram_message(chat_id, "Trục trặc kỹ thuật: Hệ thống phân tích Vision không phản hồi.")
                 return HttpResponse("OK", status=200)
 
             ai_title, ai_content, ai_category_slug = result
@@ -347,12 +352,12 @@ def telegram_ai_webhook(request):
 
                 send_telegram_message(
                     chat_id,
-                    f"DA TU DONG DANG BAI THANH CONG!\n\nTieu de: {ai_title}\n\nLink doc bai viet: {WEB_URL}"
+                    f"ĐÃ TỰ ĐỘNG ĐĂNG BÀI THÀNH CÔNG!\n\nTiêu đề: {ai_title}\n\nLink đọc bài viết: {WEB_URL}"
                 )
 
             except Exception as save_error:
                 print("SAVE ERROR:", save_error)
-                send_telegram_message(chat_id, f"Loi ghi bai viet: {str(save_error)[:100]}")
+                send_telegram_message(chat_id, f"Lỗi ghi bài viết: {str(save_error)[:100]}")
 
         # =====================================================
         # NHANH 2: TEXT -> CHATBOT HOI DAP + WEB SEARCH
@@ -363,13 +368,39 @@ def telegram_ai_webhook(request):
             if user_text.strip() == "/start":
                 send_telegram_message(
                     chat_id,
-                    "Bot Tro Ly The Thao Da Nang San Sang!\n\n"
-                    "[Gui anh kem Caption] -> He thong tu dong dung Llama 4 phan tich, viet bai bao chuan SEO dai 300 tu va dang truc tiep len website cua ban.\n\n"
-                    "[Gui tin nhan van ban] -> Hoi dap chuyen sau, tra cuu ty so, chuyen nhuong the thao moi nhat."
+                    "Bot Trợ Lý Thể Thao Đã Sẵn Sàng!\n\n"
+                    "[Gửi ảnh kèm Caption] -> Hệ thống tự động dùng Llama 4 phân tích, viết bài báo chuẩn SEO dài 300 từ và đăng trực tiếp lên website của bạn.\n\n"
+                    "[Gửi tin nhắn văn bản] -> Hỏi đáp chuyên sâu, tra cứu tỷ số, chuyển nhượng thể thao mới nhất.\n\n"
+                    "[Gửi '/livescore' hoặc 'cập nhật tỷ số'] -> Tự động tìm kiếm và cập nhật tỷ số bóng đá hôm nay."
                 )
                 return HttpResponse("OK", status=200)
 
-            send_telegram_message(chat_id, "Dang tra loi...")
+            # LIVE SCORE UPDATE
+            text_lower = user_text.strip().lower()
+            if text_lower in ("/livescore", "/score", "cập nhật tỷ số", "cap nhat ty so", "update score", "tỷ số", "ty so"):
+                send_telegram_message(chat_id, "Đang tìm kiếm tỷ số bóng đá hôm nay...")
+                scores = fetch_and_parse_scores()
+                if scores and len(scores) > 0:
+                    LiveScore.objects.all().delete()
+                    for s in scores:
+                        LiveScore.objects.create(
+                            team_a=str(s.get("team_a", "??")),
+                            team_b=str(s.get("team_b", "??")),
+                            score_a=int(s.get("score_a", 0)),
+                            score_b=int(s.get("score_b", 0)),
+                            status=str(s.get("status", "ft")),
+                            match_date=datetime.date.today()
+                        )
+                    reply = "ĐÃ CẬP NHẬT TỶ SỐ!\n\n"
+                    for s in scores:
+                        icon = {"live": "🔴", "ht": "🟡", "ft": "⚪"}.get(s.get("status", ""), "⚪")
+                        reply += f"{icon} {s['team_a']} {s['score_a']}-{s['score_b']} {s['team_b']}\n"
+                    send_telegram_message(chat_id, reply)
+                else:
+                    send_telegram_message(chat_id, "Không tìm thấy tỷ số nào. Thử lại sau.")
+                return HttpResponse("OK", status=200)
+
+            send_telegram_message(chat_id, "Đang trả lời...")
             bot_reply_text = chat_with_ai(user_text)
             send_telegram_message(chat_id, bot_reply_text)
 

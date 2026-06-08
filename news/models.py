@@ -54,3 +54,26 @@ class Subscriber(models.Model):
 
     def __str__(self):
         return self.email
+
+
+class LiveScore(models.Model):
+    team_a = models.CharField(max_length=20, verbose_name="Đội A")
+    team_b = models.CharField(max_length=20, verbose_name="Đội B")
+    score_a = models.IntegerField(default=0, verbose_name="Tỷ số A")
+    score_b = models.IntegerField(default=0, verbose_name="Tỷ số B")
+    status = models.CharField(
+        max_length=10,
+        choices=[('live', 'Live'), ('ht', 'Hiệp 1'), ('ft', 'FT')],
+        default='live',
+        verbose_name="Trạng thái"
+    )
+    match_date = models.DateField(auto_now_add=True, verbose_name="Ngày đấu")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Cập nhật lúc")
+
+    class Meta:
+        verbose_name = "Tỷ số trực tiếp"
+        verbose_name_plural = "Tỷ số trực tiếp"
+        ordering = ['-updated_at']
+
+    def __str__(self):
+        return f"{self.team_a} {self.score_a} - {self.score_b} {self.team_b}"

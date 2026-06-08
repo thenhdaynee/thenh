@@ -1,11 +1,10 @@
 import os
 import json
 import time
-import re
-import html as html_mod
 
 import requests
 from groq import Groq
+from duckduckgo_search import DDGS
 
 # =========================================================
 # CONFIG
@@ -61,37 +60,17 @@ def send_telegram_message(chat_id, text):
 
 def do_web_search(query):
     try:
-        url = "https://html.duckduckgo.com/html/"
-        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
-        res = requests.post(url, data={"q": query}, headers=headers, timeout=15)
-        res.raise_for_status()
-
-        snippets = re.findall(
-            r'<a rel="nofollow" class="result__snippet"[^>]*>(.*?)</a>',
-            res.text, re.DOTALL
-        )[:5]
-
-        if not snippets:
-            snippets = re.findall(
-                r'class="result__snippet"[^>]*>(.*?)</(?:a|span|td)',
-                res.text, re.DOTALL
-            )[:5]
-
-        clean = []
-        for s in snippets:
-            text = re.sub(r'<[^>]+>', '', s)
-            text = html_mod.unescape(text).strip()
-            if text:
-                clean.append(text)
-
-        if clean:
-            return "\n\n".join(clean)
-
-        return "Khong tim thay ket qua tren web."
-
+        with DDGS() as ddgs:
+            results = list(ddgs.text(query, max_results=5))
+        if not results:
+            return "Không tìm thấy kết quả trên web."
+        snippets = [r.get("body", "") for r in results if r.get("body")]
+        if snippets:
+            return "\n\n".join(snippets)
+        return "Không tìm thấy kết quả trên web."
     except Exception as e:
         print("WEB SEARCH ERROR:", e)
-        return "Loi trong qua trinh tim kiem web."
+        return "Lỗi trong quá trình tìm kiếm web."
 
 
 # =========================================================
@@ -100,10 +79,10 @@ def do_web_search(query):
 
 def chat_with_ai(user_text):
     if not client:
-        return "AI chua duoc cau hinh."
+        return "AI chưa được cấu hình."
 
     search_result = do_web_search(user_text)
-    reply = "Tro ly AI hien tai dang ban xu ly du lieu."
+    reply = "Trợ lý AI hiện tại đang bận xử lý dữ liệu."
 
     for attempt in range(3):
         try:
@@ -111,15 +90,15 @@ def chat_with_ai(user_text):
                 {
                     "role": "system",
                     "content": (
-                        "Ban la chuyen gia tro ly AI the thao thong minh hang dau. "
-                        "Duoi day la du lieu tim kiem tu web, hay tra loi cau hoi cua nguoi dung "
-                        "dua tren du lieu do. Luon phan hoi bang tieng Viet ngan gon, di thang vao van de, "
-                        "chinh xac va co so lieu chung minh."
+                        "Bạn là chuyên gia trợ lý AI thể thao thông minh hàng đầu. "
+                        "Dưới đây là dữ liệu tìm kiếm từ web, hãy trả lời câu hỏi của người dùng "
+                        "dựa trên dữ liệu đó. Luôn phản hồi bằng tiếng Việt ngắn gọn, đi thẳng vào vấn đề, "
+                        "chính xác và có cơ sở dẫn chứng."
                     )
                 },
                 {
                     "role": "user",
-                    "content": f"Du lieu tim kiem tu web:\n{search_result}\n\nCau hoi: {user_text}"
+                    "content": f"Dữ liệu tìm kiếm từ web:\n{search_result}\n\nCâu hỏi: {user_text}"
                 }
             ]
 
@@ -139,6 +118,73 @@ def chat_with_ai(user_text):
 
 
 # =========================================================
+# LIVE SCORE - FETCH + PARSE
+# =========================================================
+
+def fetch_and_parse_scores():
+    if not client:
+        return None
+
+    search_result = do_web_search("tỷ số bóng đá hôm nay tháng 6 năm 2026")
+
+    for attempt in range(3):
+        try:
+            messages = [
+                {
+                    "role": "system",
+                    "content": "Bạn là chuyên gia bóng đá. Nhiệm vụ của bạn là trích xuất danh sách trận đấu từ dữ liệu web."
+                },
+                {
+                    "role": "user",
+                    "content": (
+                        f"Dữ liệu tìm kiếm từ web:\n{search_result}\n\n"
+                        "Hãy trích xuất tất cả các trận đấu bóng đá có trong dữ liệu trên. "
+                        "Trả về JSON array, mỗi phần tử có dạng:\n"
+                        '{"team_a": "TenDoiA", "team_b": "TenDoiB", "score_a": 0, "score_b": 0, "status": "live|ht|ft"}\n\n'
+                        "Trong đó:\n"
+                        "- team_a, team_b: viết tắt hoặc tên đầy đủ\n"
+                        "- score_a, score_b: số bàn thắng (0 nếu chưa có)\n"
+                        "- status: 'live' nếu đang đá, 'ht' nếu hết hiệp 1, 'ft' nếu kết thúc\n\n"
+                        "Chỉ trả về JSON array, không thêm text nào khác. "
+                        "Nếu không có trận nào, trả về []."
+                    )
+                }
+            ]
+
+            response = client.chat.completions.create(
+                model=MODEL_CHAT,
+                messages=messages,
+                max_tokens=2000,
+                response_format={"type": "json_object"}
+            )
+            raw = response.choices[0].message.content.strip()
+            print("SCORE PARSE RAW:", raw)
+
+            if raw.startswith("```json"):
+                raw = raw[7:]
+            if raw.endswith("```"):
+                raw = raw[:-3]
+            raw = raw.strip()
+
+            data = json.loads(raw)
+            if isinstance(data, list):
+                return data
+            if isinstance(data, dict) and "scores" in data:
+                return data["scores"]
+            if isinstance(data, dict):
+                vals = [v for v in data.values() if isinstance(v, list)]
+                if vals:
+                    return vals[0]
+            return None
+
+        except Exception as e:
+            print(f"SCORE PARSE ERROR attempt {attempt}:", e)
+            time.sleep(4)
+
+    return None
+
+
+# =========================================================
 # AI VISION - SINH BAI BAO TU ANH
 # =========================================================
 
@@ -146,18 +192,18 @@ def generate_article(image_base64, keywords, cat_list):
     if not client:
         return None
 
-    prompt = f"""Ban la mot bien tap vien, nha bao binh luan the thao chuyen nghiep.
-Du vao hinh anh duoc cung cap cung tu khoa dinh huong: "{keywords}"
-Hay viet mot bai bao the thao tieng Viet chuyen sau, loi cuon (do dai toi thieu 300 tu).
+    prompt = f"""Bạn là một biên tập viên, nhà báo bình luận thể thao chuyên nghiệp.
+Dựa vào hình ảnh được cung cấp cùng từ khóa định hướng: "{keywords}"
+Hãy viết một bài báo thể thao tiếng Việt chuyên sâu, lôi cuốn (độ dài tối thiểu 300 từ).
 
-Ban BAT BUOC phai xuat du lieu tra ve theo dung dinh dang cau truc JSON mau sau:
+Bạn BẮT BUỘC phải xuất dữ liệu trả về theo đúng định dạng cấu trúc JSON mẫu sau:
 {{
-    "title": "Tieu de bai bao hap dan, chuan SEO",
-    "content": "Noi dung bai bao phan tich chi tiet sau sac...",
+    "title": "Tiêu đề bài báo hấp dẫn, chuẩn SEO",
+    "content": "Nội dung bài báo phân tích chi tiết sâu sắc...",
     "category": {cat_list}
 }}
 
-Trong do category phai la mot trong cac slug sau: {cat_list}. Hay tu dong xac dinh the loai phu hop nhat dua vao noi dung hinh anh va tu khoa."""
+Trong đó category phải là một trong các slug sau: {cat_list}. Hãy tự động xác định thể loại phù hợp nhất dựa vào nội dung hình ảnh và từ khóa."""
 
     ai_text = None
     for attempt in range(3):
@@ -202,7 +248,7 @@ Trong do category phai la mot trong cac slug sau: {cat_list}. Hay tu dong xac di
             raw_text = raw_text[:-3]
 
         ai_data = json.loads(raw_text.strip())
-        title = ai_data.get("title") or "Tin tuc the thao noi bat"
+        title = ai_data.get("title") or "Tin tức thể thao nổi bật"
         content = ai_data.get("content") or ""
         category_slug = ai_data.get("category", "")
         return title, content, category_slug
