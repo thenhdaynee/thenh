@@ -153,12 +153,12 @@
                     class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#c0152a]">
             </div>
             <div class="mb-3">
-                <textarea name="content" rows="3" placeholder="Noi dung bình luận..." required
+                <textarea name="content" rows="3" placeholder="Nội dung bình luận..." required
                     class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#c0152a] resize-none"></textarea>
             </div>
             <button type="submit"
                 class="bg-[#c0152a] hover:bg-[#96101f] text-white font-display text-xs font-bold px-5 py-2.5 tracking-wider uppercase transition-colors rounded">
-                Gui bình luận
+                Gửi bình luận
             </button>
         </form>
 
@@ -175,7 +175,7 @@
             <p class="text-gray-600 text-sm leading-relaxed pl-9">{{ comment.content }}</p>
         </div>
         {% empty %}
-        <p class="text-gray-400 text-sm text-center py-6">Chua co bình luận nao. Hãy là người đầu tiên bình luận!</p>
+        <p class="text-gray-400 text-sm text-center py-6">Chưa có bình luận nào. Hãy là người đầu tiên bình luận!</p>
         {% endfor %}
     </section>
 </main>
@@ -194,6 +194,7 @@
             Zalo
         </a>
         <button class="share-btn copy-link" onclick="navigator.clipboard.writeText(window.location.href).then(function(){ alert('Đã sao chép liên kết!'); })">
+            <span class="thenh-logo"><span class="avatar">T</span>THENH</span>
             Sao chép liên kết
         </button>
     </div>
