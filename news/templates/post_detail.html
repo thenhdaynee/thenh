@@ -187,14 +187,16 @@
     <!-- Social Share -->
     <div class="social-share">
         <span>Chia sẻ:</span>
-        <a href="https://www.facebook.com/sharer/sharer.php?u={{ request.build_absolute_uri }}" target="_blank" rel="noopener" class="share-btn facebook">
+        <a href="https://www.facebook.com/sharer/sharer.php?u={{ request.build_absolute_uri }}" target="_blank" rel="noopener" class="share-btn facebook" aria-label="Chia sẻ lên Facebook">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
             Facebook
         </a>
-        <a href="https://zalo.me/share?url={{ request.build_absolute_uri }}" target="_blank" rel="noopener" class="share-btn zalo">
+        <a href="https://zalo.me/share?url={{ request.build_absolute_uri }}" target="_blank" rel="noopener" class="share-btn zalo" aria-label="Chia sẻ lên Zalo">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 2C6.477 2 2 6.477 2 12c0 3.48 1.82 6.543 4.57 8.287.13.076.28.117.43.117.226 0 .445-.077.62-.218.263-.212.37-.563.277-.892l-.497-1.984c-.18-.717-.105-1.454.215-2.1.322-.65.877-1.16 1.557-1.432.2-.08.414-.12.628-.12h1.41c.214 0 .428.04.628.12.68.272 1.235.783 1.557 1.432.32.646.395 1.383.215 2.1l-.497 1.984c-.093.33.014.68.277.892.175.14.394.218.62.218.15 0 .3-.04.43-.117C20.18 18.543 22 15.48 22 12c0-5.523-4.477-10-10-10z"/></svg>
             Zalo
         </a>
         <button class="share-btn copy-link" onclick="navigator.clipboard.writeText(window.location.href).then(function(){ alert('Đã sao chép liên kết!'); })">
-            <span class="thenh-logo"><span class="avatar">T</span>THENH</span>
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
             Sao chép liên kết
         </button>
     </div>

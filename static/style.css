@@ -112,6 +112,41 @@
 [data-theme="dark"] .shadow-\[0_2px_20px_rgba\(0\,0\,0\,0\.04\)\] {
   box-shadow: 0 2px 20px rgba(0,0,0,0.2) !important;
 }
+[data-theme="dark"] .text-gray-700 {
+  color: #aaaaaa !important;
+}
+[data-theme="dark"] .bg-gray-200 {
+  background: #333333 !important;
+}
+[data-theme="dark"] .border-gray-300 {
+  border-color: #555555 !important;
+}
+[data-theme="dark"] .border-gray-700 {
+  border-color: #555555 !important;
+}
+[data-theme="dark"] .border-gray-800 {
+  border-color: #2a2a2a !important;
+}
+[data-theme="dark"] .border-gray-50 {
+  border-color: #333333 !important;
+}
+[data-theme="dark"] .hover\:bg-gray-100:hover {
+  background: #333333 !important;
+}
+[data-theme="dark"] .hover\:bg-gray-300:hover {
+  background: #444444 !important;
+}
+[data-theme="dark"] .group:hover .group-hover\:text-\[\#c0152a\] {
+  color: var(--red-light) !important;
+}
+[data-theme="dark"] .group:hover .group-hover\:border-\[\#c0152a\] {
+  border-color: var(--red) !important;
+}
+[data-theme="dark"] .hover\:text-\[\#c0152a\]:hover,
+[data-theme="dark"] .hover\:border-\[\#c0152a\]:hover {
+  color: var(--red-light) !important;
+  border-color: var(--red) !important;
+}
 
 /* ----- BACK TO TOP ----- */
 #back-to-top {

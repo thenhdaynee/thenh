@@ -1,10 +1,7 @@
-import os
 import json
 import time
 import base64
 import requests
-
-from groq import Groq
 
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse, JsonResponse
@@ -15,7 +12,13 @@ from django.core.paginator import Paginator
 from django.views.decorators.http import require_POST
 
 import cloudinary.uploader
-from .models import Post, Category, Comment
+from .models import Post, Category, Comment, Subscriber
+from .ai_services import (
+    client, chat_with_ai, send_telegram_message,
+    generate_article, LAST_CHAT_API_TIME, LAST_REQUEST_TIME,
+    PROCESSED_UPDATES, REQUEST_TIMEOUT,
+    TELEGRAM_BOT_TOKEN, YOUR_TELEGRAM_CHAT_ID, WEB_URL
+)
 
 # =========================================================
 # HELPERS
@@ -230,102 +233,11 @@ def chat_api(request):
         return JsonResponse({"error": "Vui long cho 3 giay giua cac cau hoi"}, status=429)
     LAST_CHAT_API_TIME = current_time
 
-    search_result = do_web_search(user_text)
-
-    reply = "Tro ly AI hien tai dang ban xu ly du lieu."
-
-    for attempt in range(3):
-        try:
-            messages = [
-                {
-                    "role": "system",
-                    "content": (
-                        "Ban la chuyen gia tro ly AI the thao thong minh hang dau. "
-                        "Duoi day la du lieu tim kiem tu web, hay tra loi cau hoi cua nguoi dung "
-                        "dua tren du lieu do. Luon phan hoi bang tieng Viet ngan gon, di thang vao van de, "
-                        "chinh xac va co so lieu chung minh."
-                    )
-                },
-                {
-                    "role": "user",
-                    "content": f"Du lieu tim kiem tu web:\n{search_result}\n\nCau hoi: {user_text}"
-                }
-            ]
-
-            response = client.chat.completions.create(
-                model=MODEL_CHAT,
-                messages=messages,
-                max_tokens=1000
-            )
-            reply = response.choices[0].message.content
-            break
-
-        except Exception as chat_error:
-            print(f"CHAT API ERROR ATTEMPT {attempt}:", chat_error)
-            time.sleep(4)
-
+    reply = chat_with_ai(user_text)
     return JsonResponse({"reply": reply})
 
 
-# =========================================================
-# CONFIG
-# =========================================================
 
-GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
-TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
-YOUR_TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
-REQUEST_TIMEOUT = 25
-LAST_REQUEST_TIME = 0
-LAST_CHAT_API_TIME = 0
-PROCESSED_UPDATES = set()
-WEB_URL = "https://thenh-tin-tuc-the-thao.onrender.com/"
-
-MODEL_VISION = "meta-llama/llama-4-scout-17b-16e-instruct"
-MODEL_CHAT   = "llama-3.3-70b-versatile"
-
-if GROQ_API_KEY:
-    print(f"=== GROQ KEY OK: {GROQ_API_KEY[:6]}... ===")
-    print(f"=== VISION: {MODEL_VISION} ===")
-    print(f"=== CHAT + WEB SEARCH: {MODEL_CHAT} ===")
-else:
-    print("=== KHONG TIM THAY GROQ_API_KEY ===")
-
-client = Groq(api_key=GROQ_API_KEY) if GROQ_API_KEY else None
-
-
-def do_web_search(query):
-    try:
-        url = "https://html.duckduckgo.com/html/"
-        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
-        res = requests.post(url, data={"q": query}, headers=headers, timeout=15)
-        res.raise_for_status()
-
-        import re, html as html_mod
-        snippets = re.findall(
-            r'<a rel="nofollow" class="result__snippet"[^>]*>(.*?)</a>',
-            res.text, re.DOTALL
-        )[:5]
-
-        if not snippets:
-            snippets = re.findall(
-                r'class="result__snippet"[^>]*>(.*?)</(?:a|span|td)',
-                res.text, re.DOTALL
-            )[:5]
-
-        clean = []
-        for s in snippets:
-            text = re.sub(r'<[^>]+>', '', s)
-            text = html_mod.unescape(text).strip()
-            if text:
-                clean.append(text)
-
-        if clean:
-            return "\n\n".join(clean)
-        return "Khong tim thay ket qua tren web."
-
-    except Exception as e:
-        print("WEB SEARCH ERROR:", e)
-        return "Loi trong qua trinh tim kiem web."
 
 
 # =========================================================
@@ -399,74 +311,18 @@ def telegram_ai_webhook(request):
 
             image_base64 = base64.b64encode(image_data).decode('utf-8')
 
-            # Lay danh sach category de huong dan AI
             all_cats = Category.objects.all()
             cat_list = ", ".join([f'"{c.slug}"' for c in all_cats]) if all_cats else '"khac"'
 
-            prompt = f"""Ban la mot bien tap vien, nha bao binh luan the thao chuyen nghiep.
-Du vao hinh anh duoc cung cap cung tu khoa dinh huong: "{keywords}"
-Hay viet mot bai bao the thao tieng Viet chuyen sau, loi cuon (do dai toi thieu 300 tu).
+            result = generate_article(image_base64, keywords, cat_list)
 
-Ban BAT BUOC phai xuat du lieu tra ve theo dung dinh dang cau truc JSON mau sau:
-{{
-    "title": "Tieu de bai bao hap dan, chuan SEO",
-    "content": "Noi dung bai bao phan tich chi tiet sau sac...",
-    "category": {cat_list}
-}}
-
-Trong do category phai la mot trong cac slug sau: {cat_list}. Hay tu dong xac dinh the loai phu hop nhat dua vao noi dung hinh anh va tu khoa."""
-
-            ai_text = None
-            for attempt in range(3):
-                try:
-                    completion = client.chat.completions.create(
-                        model=MODEL_VISION,
-                        messages=[
-                            {
-                                "role": "user",
-                                "content": [
-                                    {
-                                        "type": "image_url",
-                                        "image_url": {
-                                            "url": f"data:image/jpeg;base64,{image_base64}"
-                                        }
-                                    },
-                                    {
-                                        "type": "text",
-                                        "text": prompt
-                                    }
-                                ]
-                            }
-                        ],
-                        max_tokens=2500,
-                        response_format={"type": "json_object"}
-                    )
-                    ai_text = completion.choices[0].message.content
-                    print("VISION RESPONSE SUCCESS")
-                    break
-                except Exception as ai_error:
-                    print(f"VISION ERROR attempt {attempt}:", ai_error)
-                    time.sleep(4)
-
-            if not ai_text:
+            if not result:
                 send_telegram_message(chat_id, "Truc trac ky thuat: He thong phan tich Vision khong phan hoi.")
                 return HttpResponse("OK", status=200)
 
+            ai_title, ai_content, ai_category_slug = result
+
             try:
-                raw_text = ai_text.strip()
-                if raw_text.startswith("```json"):
-                    raw_text = raw_text[7:]
-                if raw_text.endswith("```"):
-                    raw_text = raw_text[:-3]
-
-                ai_data = json.loads(raw_text.strip())
-                ai_title = ai_data.get("title") or "Tin tuc the thao noi bat"
-                ai_content = ai_data.get("content") or ""
-                ai_category_slug = ai_data.get("category", "")
-
-                print("TITLE:", ai_title)
-                print("CATEGORY:", ai_category_slug)
-
                 unique_img_id = f"tele_{file_id[:8]}_{int(time.time() * 1000)}"
 
                 upload_result = cloudinary.uploader.upload(
@@ -482,7 +338,6 @@ Trong do category phai la mot trong cac slug sau: {cat_list}. Hay tu dong xac di
                 )
                 new_post.save()
 
-                # Gan category tu dong
                 if ai_category_slug:
                     try:
                         cat = Category.objects.get(slug=ai_category_slug)
@@ -514,41 +369,8 @@ Trong do category phai la mot trong cac slug sau: {cat_list}. Hay tu dong xac di
                 )
                 return HttpResponse("OK", status=200)
 
-            search_result = do_web_search(user_text)
             send_telegram_message(chat_id, "Dang tra loi...")
-
-            bot_reply_text = "Tro ly AI hien tai dang ban xu ly du lieu."
-
-            for attempt in range(3):
-                try:
-                    messages = [
-                        {
-                            "role": "system",
-                            "content": (
-                                "Ban la chuyen gia tro ly AI the thao thong minh hang dau. "
-                                "Duoi day la du lieu tim kiem tu web, hay tra loi cau hoi cua nguoi dung "
-                                "dua tren du lieu do. Luon phan hoi bang tieng Viet ngan gon, di thang vao van de, "
-                                "chinh xac va co so lieu chung minh."
-                            )
-                        },
-                        {
-                            "role": "user",
-                            "content": f"Du lieu tim kiem tu web:\n{search_result}\n\nCau hoi: {user_text}"
-                        }
-                    ]
-
-                    response = client.chat.completions.create(
-                        model=MODEL_CHAT,
-                        messages=messages,
-                        max_tokens=1000
-                    )
-                    bot_reply_text = response.choices[0].message.content
-                    break
-
-                except Exception as chat_error:
-                    print(f"CHAT AGENT ERROR ATTEMPT {attempt}:", chat_error)
-                    time.sleep(4)
-
+            bot_reply_text = chat_with_ai(user_text)
             send_telegram_message(chat_id, bot_reply_text)
 
         return HttpResponse("OK", status=200)
