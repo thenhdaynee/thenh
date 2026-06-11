@@ -82,6 +82,10 @@ def chat_with_ai(user_text):
         return "AI chưa được cấu hình."
 
     search_result = do_web_search(user_text)
+
+    if "Không tìm thấy kết quả" in search_result or "Lỗi" in search_result:
+        return "Xin lỗi, hiện tại không thể tìm kiếm thông tin trên web cho câu hỏi của bạn."
+
     reply = "Trợ lý AI hiện tại đang bận xử lý dữ liệu."
 
     for attempt in range(3):
@@ -91,9 +95,11 @@ def chat_with_ai(user_text):
                     "role": "system",
                     "content": (
                         "Bạn là chuyên gia trợ lý AI thể thao thông minh hàng đầu. "
-                        "Dưới đây là dữ liệu tìm kiếm từ web, hãy trả lời câu hỏi của người dùng "
-                        "dựa trên dữ liệu đó. Luôn phản hồi bằng tiếng Việt ngắn gọn, đi thẳng vào vấn đề, "
-                        "chính xác và có cơ sở dẫn chứng."
+                        "Dữ liệu web bên dưới là NGUỒN DUY NHẤT bạn được phép dùng để trả lời. "
+                        "TUYỆT ĐỐI KHÔNG được dùng kiến thức có sẵn của bạn. "
+                        "KHÔNG bao giờ đề cập đến hạn mức kiến thức, ngày cập nhật dữ liệu, hay 'dữ liệu chỉ cập nhật đến năm X'. "
+                        "Nếu dữ liệu web KHÔNG chứa câu trả lời, hãy nói: 'Không tìm thấy thông tin trên web.' "
+                        "Luôn phản hồi bằng tiếng Việt ngắn gọn, đi thẳng vào vấn đề, chính xác và có cơ sở từ dữ liệu web."
                     )
                 },
                 {
