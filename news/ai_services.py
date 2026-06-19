@@ -2,6 +2,7 @@ import os
 import json
 import re
 import time
+import xml.etree.ElementTree as ET
 
 import requests
 from groq import Groq
@@ -99,6 +100,62 @@ def _search_wikipedia(query):
     return None
 
 
+RSS_FEEDS = [
+    ("BBC Sport", "https://feeds.bbci.co.uk/sport/rss.xml"),
+    ("BBC Football", "https://feeds.bbci.co.uk/sport/football/rss.xml"),
+    ("ESPN", "https://www.espn.com/espn/rss/news"),
+    ("Sky Sports", "https://www.skysports.com/rss/12040"),
+]
+
+RSS_CACHE = {"data": None, "time": 0}
+RSS_CACHE_TTL = 300
+
+
+def _fetch_rss():
+    global RSS_CACHE
+    now = time.time()
+    if RSS_CACHE["data"] and now - RSS_CACHE["time"] < RSS_CACHE_TTL:
+        return RSS_CACHE["data"]
+
+    items = []
+    for name, url in RSS_FEEDS:
+        try:
+            resp = requests.get(url, headers={"User-Agent": "ThenhSportNewsBot/1.0"}, timeout=10)
+            if resp.status_code != 200:
+                continue
+            root = ET.fromstring(resp.content)
+            for item in root.iter("item"):
+                title = item.findtext("title", "")
+                desc = item.findtext("description", "")
+                desc = re.sub(r"<[^>]+>", "", desc)
+                if title:
+                    items.append(f"{title}\n{desc}" if desc else title)
+        except Exception as e:
+            print(f"RSS ERROR {name}: {e}")
+
+    if items:
+        result = "\n\n".join(items[:10])
+        RSS_CACHE = {"data": result, "time": time.time()}
+        return result
+    return None
+
+
+NEWS_KEYWORDS = [
+    "tin tức", "tin thể thao", "tin bóng đá", "mới nhất",
+    "hôm nay", "gần đây", "nổi bật", "tin nóng",
+    "news", "sport news", "football news", "latest",
+    "today", "breaking", "update",
+]
+
+
+def _is_news_query(query):
+    q = query.lower()
+    for kw in NEWS_KEYWORDS:
+        if kw in q:
+            return True
+    return False
+
+
 def do_web_search(query):
     global LAST_SEARCH_TIME
 
@@ -106,6 +163,12 @@ def do_web_search(query):
     if now - LAST_SEARCH_TIME < SEARCH_COOLDOWN:
         time.sleep(SEARCH_COOLDOWN - (now - LAST_SEARCH_TIME))
     LAST_SEARCH_TIME = time.time()
+
+    # ===== CACH 0: RSS cho cau hoi kieu "tin tuc" =====
+    if _is_news_query(query):
+        rss_result = _fetch_rss()
+        if rss_result:
+            return rss_result
 
     # ===== CACH 1: DuckDuckGo HTML endpoint =====
     headers = {
@@ -135,16 +198,21 @@ def do_web_search(query):
         except Exception as e:
             print(f"DDG HTML ERROR attempt {attempt + 1}: {e}")
 
-        # Rate limit -> exponential backoff
         delay = 2 ** (attempt + 1)
         time.sleep(delay)
 
-    # ===== CACH 2: Wikipedia fallback =====
+    # ===== CACH 2: RSS fallback (neu chua thu) =====
+    if not _is_news_query(query):
+        rss_result = _fetch_rss()
+        if rss_result:
+            return rss_result
+
+    # ===== CACH 3: Wikipedia fallback =====
     wiki_result = _search_wikipedia(query)
     if wiki_result:
         return wiki_result
 
-    # ===== CACH 3: Groq tu tra loi tu knowledge =====
+    # ===== CACH 4: Groq tu tra loi =====
     if client:
         return "__GROQ_FALLBACK__"
 
