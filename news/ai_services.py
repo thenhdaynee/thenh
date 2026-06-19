@@ -201,18 +201,12 @@ def do_web_search(query):
         delay = 2 ** (attempt + 1)
         time.sleep(delay)
 
-    # ===== CACH 2: RSS fallback (neu chua thu) =====
-    if not _is_news_query(query):
-        rss_result = _fetch_rss()
-        if rss_result:
-            return rss_result
-
-    # ===== CACH 3: Wikipedia fallback =====
+    # ===== CACH 2: Wikipedia fallback =====
     wiki_result = _search_wikipedia(query)
     if wiki_result:
         return wiki_result
 
-    # ===== CACH 4: Groq tu tra loi =====
+    # ===== CACH 3: Groq tu tra loi =====
     if client:
         return "__GROQ_FALLBACK__"
 
