@@ -22,7 +22,9 @@ MODEL_CHAT = "llama-3.3-70b-versatile"
 # Rate limiting (chi hoat dong trong 1 worker)
 LAST_CHAT_API_TIME = 0
 LAST_REQUEST_TIME = 0
+LAST_SEARCH_TIME = 0
 PROCESSED_UPDATES = set()
+SEARCH_COOLDOWN = 2.0  # giay toi thieu giua 2 lan search
 
 # Groq client
 client = Groq(api_key=GROQ_API_KEY) if GROQ_API_KEY else None
@@ -59,18 +61,37 @@ def send_telegram_message(chat_id, text):
 # =========================================================
 
 def do_web_search(query):
-    try:
-        with DDGS() as ddgs:
-            results = list(ddgs.text(query, max_results=5))
-        if not results:
+    global LAST_SEARCH_TIME
+
+    # Cooldown giua cac lan search
+    now = time.time()
+    if now - LAST_SEARCH_TIME < SEARCH_COOLDOWN:
+        time.sleep(SEARCH_COOLDOWN - (now - LAST_SEARCH_TIME))
+    LAST_SEARCH_TIME = time.time()
+
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            with DDGS() as ddgs:
+                results = list(ddgs.text(query, max_results=5, backend="html"))
+            if not results:
+                return "Không tìm thấy kết quả trên web."
+            snippets = [r.get("body", "") for r in results if r.get("body")]
+            if snippets:
+                return "\n\n".join(snippets)
             return "Không tìm thấy kết quả trên web."
-        snippets = [r.get("body", "") for r in results if r.get("body")]
-        if snippets:
-            return "\n\n".join(snippets)
-        return "Không tìm thấy kết quả trên web."
-    except Exception as e:
-        print("WEB SEARCH ERROR:", e)
-        return "Lỗi trong quá trình tìm kiếm web."
+        except Exception as e:
+            err_str = str(e).lower()
+            print(f"WEB SEARCH ERROR attempt {attempt + 1}/{max_retries}: {e}")
+            if "202" in err_str or "ratelimit" in err_str or "rate" in err_str:
+                delay = 2 ** (attempt + 1)  # 2s, 4s, 8s
+                print(f"  => Rate limited, retry sau {delay}s...")
+                time.sleep(delay)
+            elif attempt < max_retries - 1:
+                time.sleep(2)
+            else:
+                return "Lỗi trong quá trình tìm kiếm web."
+    return "Lỗi trong quá trình tìm kiếm web."
 
 
 # =========================================================
@@ -131,24 +152,68 @@ def fetch_and_parse_scores():
     if not client:
         return None
 
-    search_result = do_web_search("tỷ số bóng đá hôm nay tháng 6 năm 2026")
+    raw_html = None
+    search_result = None
 
+    # ===== CACH 1: Fetch truc tiep tu Sky Sports =====
+    try:
+        headers = {
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/125.0.0.0 Safari/537.36"
+            ),
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.5",
+        }
+        resp = requests.get("https://www.skysports.com/live-scores", headers=headers, timeout=15)
+        if resp.status_code == 200:
+            raw_html = resp.text
+            print(f"SKY SPORTS FETCH OK: {len(raw_html)} bytes")
+    except Exception as e:
+        print(f"SKY SPORTS FETCH ERROR: {e}")
+
+    # ===== CACH 2: Fallback DuckDuckGo query =====
+    if not raw_html:
+        queries = [
+            "live scores today football june 2026 site:skysports.com",
+            "football scores today live premier league june 2026",
+            "live football scores today",
+        ]
+        for q in queries:
+            result = do_web_search(q)
+            if result and "Lỗi" not in result and "Không tìm thấy" not in result:
+                search_result = result
+                print(f"FALLBACK SEARCH OK: {q}")
+                break
+
+    # ===== Parse bang AI =====
     for attempt in range(3):
         try:
+            if raw_html:
+                # Trich xuat doan text ngan gon tu HTML
+                import re
+                text = re.sub(r"<[^>]+>", " ", raw_html)
+                text = re.sub(r"\s+", " ", text)[:8000]
+                user_content = f"Dữ liệu raw từ trang live-scores:\n{text[:5000]}\n\nHãy trích xuất danh sách trận đấu bóng đá."
+            elif search_result:
+                user_content = f"Dữ liệu tìm kiếm từ web:\n{search_result}\n\nHãy trích xuất danh sách trận đấu bóng đá."
+            else:
+                return None
+
             messages = [
                 {
                     "role": "system",
-                    "content": "Bạn là chuyên gia bóng đá. Nhiệm vụ của bạn là trích xuất danh sách trận đấu từ dữ liệu web."
+                    "content": "Bạn là chuyên gia bóng đá. Nhiệm vụ của bạn là trích xuất danh sách trận đấu từ dữ liệu."
                 },
                 {
                     "role": "user",
                     "content": (
-                        f"Dữ liệu tìm kiếm từ web:\n{search_result}\n\n"
-                        "Hãy trích xuất tất cả các trận đấu bóng đá có trong dữ liệu trên. "
+                        f"{user_content}\n\n"
                         "Trả về JSON array, mỗi phần tử có dạng:\n"
                         '{"team_a": "TenDoiA", "team_b": "TenDoiB", "score_a": 0, "score_b": 0, "status": "live|ht|ft"}\n\n'
                         "Trong đó:\n"
-                        "- team_a, team_b: viết tắt hoặc tên đầy đủ\n"
+                        "- team_a, team_b: tên đội bóng\n"
                         "- score_a, score_b: số bàn thắng (0 nếu chưa có)\n"
                         "- status: 'live' nếu đang đá, 'ht' nếu hết hiệp 1, 'ft' nếu kết thúc\n\n"
                         "Chỉ trả về JSON array, không thêm text nào khác. "
