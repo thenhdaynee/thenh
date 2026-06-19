@@ -1,10 +1,10 @@
 import os
 import json
+import re
 import time
 
 import requests
 from groq import Groq
-from duckduckgo_search import DDGS
 
 # =========================================================
 # CONFIG
@@ -60,37 +60,94 @@ def send_telegram_message(chat_id, text):
 # WEB SEARCH
 # =========================================================
 
+def _parse_ddg_html(html):
+    snippets = re.findall(
+        r'class="result__snippet"[^>]*>(.*?)</(?:a|span|div)>',
+        html, re.DOTALL
+    )
+    if not snippets:
+        snippets = re.findall(
+            r'<a[^>]*class="result__a"[^>]*>(.*?)</a>',
+            html, re.DOTALL
+        )
+    results = []
+    for s in snippets:
+        text = re.sub(r"<[^>]+>", "", s)
+        text = text.strip()
+        if text:
+            results.append(text)
+    return results[:5]
+
+
+def _search_wikipedia(query):
+    try:
+        url = "https://en.wikipedia.org/w/api.php"
+        params = {
+            "action": "opensearch",
+            "search": query,
+            "limit": 5,
+            "format": "json",
+        }
+        headers = {"User-Agent": "ThenhSportNewsBot/1.0"}
+        resp = requests.get(url, params=params, headers=headers, timeout=10)
+        if resp.status_code == 200:
+            data = resp.json()
+            if len(data) > 2 and data[2]:
+                return "\n\n".join(data[2])
+    except Exception as e:
+        print(f"WIKIPEDIA SEARCH ERROR: {e}")
+    return None
+
+
 def do_web_search(query):
     global LAST_SEARCH_TIME
 
-    # Cooldown giua cac lan search
     now = time.time()
     if now - LAST_SEARCH_TIME < SEARCH_COOLDOWN:
         time.sleep(SEARCH_COOLDOWN - (now - LAST_SEARCH_TIME))
     LAST_SEARCH_TIME = time.time()
 
-    max_retries = 3
-    for attempt in range(max_retries):
+    # ===== CACH 1: DuckDuckGo HTML endpoint =====
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/125.0.0.0 Safari/537.36"
+        ),
+        "Content-Type": "application/x-www-form-urlencoded",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    }
+
+    for attempt in range(3):
         try:
-            with DDGS() as ddgs:
-                results = list(ddgs.text(query, max_results=5, backend="html"))
-            if not results:
-                return "Không tìm thấy kết quả trên web."
-            snippets = [r.get("body", "") for r in results if r.get("body")]
-            if snippets:
-                return "\n\n".join(snippets)
-            return "Không tìm thấy kết quả trên web."
-        except Exception as e:
-            err_str = str(e).lower()
-            print(f"WEB SEARCH ERROR attempt {attempt + 1}/{max_retries}: {e}")
-            if "202" in err_str or "ratelimit" in err_str or "rate" in err_str:
-                delay = 2 ** (attempt + 1)  # 2s, 4s, 8s
-                print(f"  => Rate limited, retry sau {delay}s...")
-                time.sleep(delay)
-            elif attempt < max_retries - 1:
-                time.sleep(2)
+            resp = requests.post(
+                "https://html.duckduckgo.com/html/",
+                data={"q": query},
+                headers=headers,
+                timeout=15,
+            )
+            if resp.status_code == 200:
+                results = _parse_ddg_html(resp.text)
+                if results:
+                    return "\n\n".join(results)
             else:
-                return "Lỗi trong quá trình tìm kiếm web."
+                print(f"DDG HTML attempt {attempt + 1}: HTTP {resp.status_code}")
+        except Exception as e:
+            print(f"DDG HTML ERROR attempt {attempt + 1}: {e}")
+
+        # Rate limit -> exponential backoff
+        delay = 2 ** (attempt + 1)
+        time.sleep(delay)
+
+    # ===== CACH 2: Wikipedia fallback =====
+    wiki_result = _search_wikipedia(query)
+    if wiki_result:
+        return wiki_result
+
+    # ===== CACH 3: Groq tu tra loi tu knowledge =====
+    if client:
+        return "__GROQ_FALLBACK__"
+
     return "Lỗi trong quá trình tìm kiếm web."
 
 
@@ -103,30 +160,33 @@ def chat_with_ai(user_text):
         return "AI chưa được cấu hình."
 
     search_result = do_web_search(user_text)
-
-    if "Không tìm thấy kết quả" in search_result or "Lỗi" in search_result:
-        return "Xin lỗi, hiện tại không thể tìm kiếm thông tin trên web cho câu hỏi của bạn."
+    is_fallback = (search_result == "__GROQ_FALLBACK__")
 
     reply = "Trợ lý AI hiện tại đang bận xử lý dữ liệu."
 
     for attempt in range(3):
         try:
+            if is_fallback:
+                system_prompt = (
+                    "Bạn là chuyên gia trợ lý AI thể thao thông minh hàng đầu. "
+                    "Trả lời câu hỏi của người dùng dựa trên kiến thức hiện có của bạn. "
+                    "Luôn phản hồi bằng tiếng Việt ngắn gọn, đi thẳng vào vấn đề, chính xác. "
+                    "Nếu bạn không biết câu trả lời, hãy nói: 'Không tìm thấy thông tin.'"
+                )
+                user_content = f"Câu hỏi: {user_text}"
+            else:
+                system_prompt = (
+                    "Bạn là chuyên gia trợ lý AI thể thao thông minh hàng đầu. "
+                    "Dữ liệu web bên dưới là NGUỒN DUY NHẤT bạn được phép dùng để trả lời. "
+                    "TUYỆT ĐỐI KHÔNG được dùng kiến thức có sẵn của bạn. "
+                    "Nếu dữ liệu web KHÔNG chứa câu trả lời, hãy nói: 'Không tìm thấy thông tin trên web.' "
+                    "Luôn phản hồi bằng tiếng Việt ngắn gọn, đi thẳng vào vấn đề, chính xác và có cơ sở từ dữ liệu web."
+                )
+                user_content = f"Dữ liệu tìm kiếm từ web:\n{search_result}\n\nCâu hỏi: {user_text}"
+
             messages = [
-                {
-                    "role": "system",
-                    "content": (
-                        "Bạn là chuyên gia trợ lý AI thể thao thông minh hàng đầu. "
-                        "Dữ liệu web bên dưới là NGUỒN DUY NHẤT bạn được phép dùng để trả lời. "
-                        "TUYỆT ĐỐI KHÔNG được dùng kiến thức có sẵn của bạn. "
-                        "KHÔNG bao giờ đề cập đến hạn mức kiến thức, ngày cập nhật dữ liệu, hay 'dữ liệu chỉ cập nhật đến năm X'. "
-                        "Nếu dữ liệu web KHÔNG chứa câu trả lời, hãy nói: 'Không tìm thấy thông tin trên web.' "
-                        "Luôn phản hồi bằng tiếng Việt ngắn gọn, đi thẳng vào vấn đề, chính xác và có cơ sở từ dữ liệu web."
-                    )
-                },
-                {
-                    "role": "user",
-                    "content": f"Dữ liệu tìm kiếm từ web:\n{search_result}\n\nCâu hỏi: {user_text}"
-                }
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_content},
             ]
 
             response = client.chat.completions.create(
@@ -191,8 +251,6 @@ def fetch_and_parse_scores():
     for attempt in range(3):
         try:
             if raw_html:
-                # Trich xuat doan text ngan gon tu HTML
-                import re
                 text = re.sub(r"<[^>]+>", " ", raw_html)
                 text = re.sub(r"\s+", " ", text)[:8000]
                 user_content = f"Dữ liệu raw từ trang live-scores:\n{text[:5000]}\n\nHãy trích xuất danh sách trận đấu bóng đá."
