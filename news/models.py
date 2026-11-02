@@ -56,6 +56,21 @@ class Subscriber(models.Model):
         return self.email
 
 
+class TelegramUpdate(models.Model):
+    update_id = models.BigIntegerField(unique=True, db_index=True, verbose_name="Update ID")
+    chat_id = models.CharField(max_length=64, blank=True, verbose_name="Chat ID")
+    status = models.CharField(max_length=20, default="processing", verbose_name="Trạng thái")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Nhận lúc")
+
+    class Meta:
+        verbose_name = "Telegram update"
+        verbose_name_plural = "Telegram updates"
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.update_id} - {self.status}"
+
+
 class LiveScore(models.Model):
     team_a = models.CharField(max_length=20, verbose_name="Đội A")
     team_b = models.CharField(max_length=20, verbose_name="Đội B")

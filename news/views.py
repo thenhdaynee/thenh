@@ -3,25 +3,37 @@ import time
 import base64
 import datetime
 import random
+import threading
+from datetime import timedelta
+
 import requests
 
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib import messages
+from django.db import IntegrityError, close_old_connections
 from django.db.models import Q
 from django.core.paginator import Paginator
+from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 import cloudinary.uploader
-from .models import Post, Category, Comment, Subscriber, LiveScore
+from .models import Post, Category, Comment, Subscriber, LiveScore, TelegramUpdate
 from .ai_services import (
-    client, chat_with_ai, send_telegram_message,
+    AI_AVAILABLE, chat_with_ai, send_telegram_message, send_telegram_typing,
     generate_article, fetch_and_parse_scores,
-    LAST_CHAT_API_TIME, LAST_REQUEST_TIME,
-    PROCESSED_UPDATES, REQUEST_TIMEOUT,
-    TELEGRAM_BOT_TOKEN, YOUR_TELEGRAM_CHAT_ID, WEB_URL
+    REQUEST_TIMEOUT, TELEGRAM_BOT_TOKEN, YOUR_TELEGRAM_CHAT_ID, WEB_URL
 )
+
+LAST_CHAT_API_TIME = 0
+CHAT_API_LOCK = threading.Lock()
+
+WEBHOOK_SEMAPHORE = threading.Semaphore(4)
+CHAT_LOCKS = {}
+CHAT_LOCKS_LOCK = threading.Lock()
+UPDATE_CLEANUP_COUNTER = 0
+UPDATE_CLEANUP_LOCK = threading.Lock()
 
 # =========================================================
 # HELPERS
@@ -221,7 +233,7 @@ def chat_api(request):
     if request.method != "POST":
         return JsonResponse({"error": "Method not allowed"}, status=405)
 
-    if not client:
+    if not AI_AVAILABLE:
         return JsonResponse({"error": "AI chưa được cấu hình"}, status=503)
 
     try:
@@ -233,10 +245,11 @@ def chat_api(request):
     if not user_text:
         return JsonResponse({"error": "Vui long nhap cau hoi"}, status=400)
 
-    current_time = time.time()
-    if current_time - LAST_CHAT_API_TIME < 3:
-        return JsonResponse({"error": "Vui long cho 3 giay giua cac cau hoi"}, status=429)
-    LAST_CHAT_API_TIME = current_time
+    with CHAT_API_LOCK:
+        current_time = time.time()
+        if current_time - LAST_CHAT_API_TIME < 3:
+            return JsonResponse({"error": "Vui long cho 3 giay giua cac cau hoi"}, status=429)
+        LAST_CHAT_API_TIME = current_time
 
     reply = chat_with_ai(user_text)
     return JsonResponse({"reply": reply})
@@ -249,163 +262,296 @@ def chat_api(request):
 # TELEGRAM WEBHOOK
 # =========================================================
 
+def _cleanup_old_updates():
+    global UPDATE_CLEANUP_COUNTER
+
+    with UPDATE_CLEANUP_LOCK:
+        UPDATE_CLEANUP_COUNTER += 1
+        should_cleanup = UPDATE_CLEANUP_COUNTER % 100 == 0
+
+    if not should_cleanup:
+        return
+    try:
+        cutoff = timezone.now() - timedelta(days=7)
+        TelegramUpdate.objects.filter(created_at__lt=cutoff).delete()
+    except Exception as exc:
+        print(f"UPDATE CLEANUP ERROR: {exc}")
+
+
+def _get_chat_lock(chat_id):
+    with CHAT_LOCKS_LOCK:
+        lock = CHAT_LOCKS.get(chat_id)
+        if lock is None:
+            lock = threading.Lock()
+            CHAT_LOCKS[chat_id] = lock
+        return lock
+
+
+def _mark_update(update_id, status):
+    try:
+        TelegramUpdate.objects.filter(update_id=update_id).update(status=status)
+    except Exception as exc:
+        print(f"UPDATE STATUS ERROR: {exc}")
+
+
+def _process_telegram_update(update, chat_id, update_id):
+    message = update.get("message") or {}
+
+    if "photo" in message and "caption" in message:
+        send_telegram_typing(chat_id)
+        keywords = message["caption"]
+        photo_file = message["photo"][-1]
+        file_id = photo_file["file_id"]
+
+        file_info_res = requests.get(
+            f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/getFile?file_id={file_id}",
+            timeout=REQUEST_TIMEOUT,
+        ).json()
+
+        if not file_info_res.get("ok"):
+            send_telegram_message(
+                chat_id,
+                "Lỗi: Không thể tải tệp hình ảnh từ máy chủ Telegram.",
+            )
+            return
+
+        file_path = file_info_res["result"]["file_path"]
+        image_response = requests.get(
+            f"https://api.telegram.org/file/bot{TELEGRAM_BOT_TOKEN}/{file_path}",
+            timeout=REQUEST_TIMEOUT,
+        )
+        if image_response.status_code != 200:
+            send_telegram_message(chat_id, "Lỗi: Không tải được hình ảnh.")
+            return
+
+        image_data = image_response.content
+        if len(image_data) > 20 * 1024 * 1024:
+            send_telegram_message(chat_id, "Ảnh quá lớn, vui lòng gửi ảnh nhỏ hơn 20MB.")
+            return
+
+        image_base64 = base64.b64encode(image_data).decode("utf-8")
+        all_cats = Category.objects.all()
+        cat_list = (
+            ", ".join([f'"{category.slug}"' for category in all_cats])
+            if all_cats else '"khac"'
+        )
+
+        result = generate_article(image_base64, keywords, cat_list)
+        if not result:
+            send_telegram_message(
+                chat_id,
+                "Trục trặc kỹ thuật: Hệ thống phân tích Vision không phản hồi.",
+            )
+            return
+
+        ai_title, ai_content, ai_category_slug = result
+        try:
+            unique_img_id = f"tele_{update_id}_{file_id[:8]}"
+            upload_result = cloudinary.uploader.upload(
+                image_data,
+                public_id=unique_img_id,
+                folder="news",
+            )
+            new_post = Post(
+                title=ai_title,
+                content=ai_content,
+                image_file=upload_result.get("public_id"),
+            )
+            new_post.save()
+
+            if ai_category_slug:
+                try:
+                    category = Category.objects.get(slug=ai_category_slug)
+                    new_post.categories.add(category)
+                except Category.DoesNotExist:
+                    pass
+
+            send_telegram_message(
+                chat_id,
+                (
+                    "ĐÃ TỰ ĐỘNG ĐĂNG BÀI THÀNH CÔNG!\n\n"
+                    f"Tiêu đề: {ai_title}\n\n"
+                    f"Link đọc bài viết: {WEB_URL}"
+                ),
+            )
+        except Exception as save_error:
+            print(f"SAVE ERROR: {save_error}")
+            send_telegram_message(
+                chat_id,
+                f"Lỗi ghi bài viết: {str(save_error)[:100]}",
+            )
+        return
+
+    if "text" not in message:
+        return
+
+    user_text = message["text"]
+
+    if user_text.strip() == "/start":
+        send_telegram_message(
+            chat_id,
+            "Bot Trợ Lý Thể Thao Đã Sẵn Sàng!\n\n"
+            "[Gửi ảnh kèm Caption] -> AI phân tích ảnh, viết bài chuẩn SEO dài 300 từ và đăng trực tiếp lên website.\n\n"
+            "[Gửi tin nhắn văn bản] -> Hỏi đáp chuyên sâu, tra cứu tỷ số, chuyển nhượng thể thao mới nhất.\n\n"
+            "[Gửi '/livescore' hoặc 'cập nhật tỷ số'] -> Tự động tìm kiếm và cập nhật tỷ số bóng đá hôm nay.",
+        )
+        return
+
+    text_lower = user_text.strip().lower()
+    if text_lower in (
+        "/livescore", "/score", "cập nhật tỷ số", "cap nhat ty so",
+        "update score", "tỷ số", "ty so",
+    ):
+        send_telegram_typing(chat_id)
+        scores = fetch_and_parse_scores()
+        if scores:
+            LiveScore.objects.all().delete()
+            valid_scores = []
+            for score in scores:
+                try:
+                    item = {
+                        "team_a": str(score.get("team_a", "??")),
+                        "team_b": str(score.get("team_b", "??")),
+                        "score_a": int(score.get("score_a", 0) or 0),
+                        "score_b": int(score.get("score_b", 0) or 0),
+                        "status": str(score.get("status", "ft")),
+                    }
+                except (TypeError, ValueError):
+                    continue
+                LiveScore.objects.create(
+                    team_a=item["team_a"],
+                    team_b=item["team_b"],
+                    score_a=item["score_a"],
+                    score_b=item["score_b"],
+                    status=item["status"],
+                    match_date=datetime.date.today(),
+                )
+                valid_scores.append(item)
+
+            if valid_scores:
+                reply = "ĐÃ CẬP NHẬT TỶ SỐ!\n\n"
+                for score in valid_scores:
+                    icon = {
+                        "live": "🔴", "ht": "🟡", "ft": "⚪",
+                    }.get(score["status"], "⚪")
+                    reply += (
+                        f"{icon} {score['team_a']} "
+                        f"{score['score_a']}-{score['score_b']} "
+                        f"{score['team_b']}\n"
+                    )
+                send_telegram_message(chat_id, reply)
+            else:
+                send_telegram_message(chat_id, "Không tìm thấy tỷ số nào. Thử lại sau.")
+        else:
+            send_telegram_message(chat_id, "Không tìm thấy tỷ số nào. Thử lại sau.")
+        return
+
+    send_telegram_typing(chat_id)
+    bot_reply_text = chat_with_ai(user_text)
+    if not bot_reply_text:
+        bot_reply_text = "Trợ lý AI hiện đang bận. Vui lòng thử lại sau."
+    send_telegram_message(chat_id, bot_reply_text)
+
+
+def _run_background_update(update, chat_id, update_id):
+    close_old_connections()
+    chat_lock = _get_chat_lock(chat_id)
+
+    if not chat_lock.acquire(blocking=False):
+        send_telegram_message(
+            chat_id,
+            "Mình đang xử lý tin trước, vui lòng đợi một chút.",
+        )
+        _mark_update(update_id, "skipped")
+        WEBHOOK_SEMAPHORE.release()
+        close_old_connections()
+        return
+
+    try:
+        _process_telegram_update(update, chat_id, update_id)
+        _mark_update(update_id, "done")
+    except Exception as exc:
+        print(f"BACKGROUND UPDATE ERROR: {exc}")
+        _mark_update(update_id, "failed")
+        send_telegram_message(
+            chat_id,
+            "Có lỗi xảy ra khi xử lý tin nhắn. Vui lòng thử lại sau.",
+        )
+    finally:
+        chat_lock.release()
+        WEBHOOK_SEMAPHORE.release()
+        close_old_connections()
+
+
 @csrf_exempt
 def telegram_ai_webhook(request):
-    global LAST_REQUEST_TIME
-    global PROCESSED_UPDATES
-
     if request.method != "POST":
         return HttpResponse("Method not allowed", status=405)
 
     try:
-        update = json.loads(request.body.decode('utf-8'))
+        update = json.loads(request.body.decode("utf-8"))
         print("TELEGRAM UPDATE:", update)
-
-        update_id = update.get("update_id")
-        if update_id in PROCESSED_UPDATES:
-            return HttpResponse("OK", status=200)
-        PROCESSED_UPDATES.add(update_id)
-        if len(PROCESSED_UPDATES) > 100:
-            PROCESSED_UPDATES.clear()
 
         if "message" not in update:
             return HttpResponse("OK", status=200)
 
         message = update["message"]
         chat_id = str(message["chat"]["id"])
+        update_id = update.get("update_id")
 
-        if YOUR_TELEGRAM_CHAT_ID:
-            if chat_id != str(YOUR_TELEGRAM_CHAT_ID).strip():
-                return HttpResponse("Unauthorized", status=403)
-
-        if not client:
-            print("Groq client loi hoac chua cau hinh bien moi truong")
+        if update_id is None:
+            return HttpResponse("OK", status=200)
+        try:
+            update_id = int(update_id)
+        except (TypeError, ValueError):
             return HttpResponse("OK", status=200)
 
-        current_time = time.time()
-        if current_time - LAST_REQUEST_TIME < 5:
-            print("SPAM REQUEST BLOCKED")
+        if YOUR_TELEGRAM_CHAT_ID and chat_id != str(YOUR_TELEGRAM_CHAT_ID).strip():
+            print(f"UNAUTHORIZED CHAT: {chat_id}")
             return HttpResponse("OK", status=200)
-        LAST_REQUEST_TIME = current_time
 
-        # =====================================================
-        # NHANH 1: ANH + CAPTION -> TU DONG DANG BAI VIET
-        # =====================================================
-        if "photo" in message and "caption" in message:
-            keywords = message["caption"]
-            photo_file = message["photo"][-1]
-            file_id = photo_file["file_id"]
+        try:
+            _, created = TelegramUpdate.objects.get_or_create(
+                update_id=update_id,
+                defaults={"chat_id": chat_id, "status": "processing"},
+            )
+        except IntegrityError:
+            return HttpResponse("OK", status=200)
 
-            send_telegram_message(chat_id, "Đang phân tích ảnh và tiến hành sáng tác bài viết...")
+        if not created:
+            print(f"DUPLICATE UPDATE IGNORED: {update_id}")
+            return HttpResponse("OK", status=200)
 
-            file_info_res = requests.get(
-                f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/getFile?file_id={file_id}",
-                timeout=REQUEST_TIMEOUT
-            ).json()
+        _cleanup_old_updates()
 
-            if not file_info_res.get("ok"):
-                send_telegram_message(chat_id, "Lỗi: Không thể tải tệp hình ảnh từ máy chủ Telegram.")
-                return HttpResponse("OK", status=200)
+        if not AI_AVAILABLE:
+            print("AI chua duoc cau hinh")
+            send_telegram_message(chat_id, "AI chưa được cấu hình trên máy chủ.")
+            _mark_update(update_id, "no_ai")
+            return HttpResponse("OK", status=200)
 
-            file_path = file_info_res["result"]["file_path"]
+        if not WEBHOOK_SEMAPHORE.acquire(blocking=False):
+            send_telegram_message(
+                chat_id,
+                "Hệ thống đang bận xử lý nhiều yêu cầu. Vui lòng thử lại sau.",
+            )
+            _mark_update(update_id, "rejected")
+            return HttpResponse("OK", status=200)
 
-            image_data = requests.get(
-                f"https://api.telegram.org/file/bot{TELEGRAM_BOT_TOKEN}/{file_path}",
-                timeout=REQUEST_TIMEOUT
-            ).content
-
-            image_base64 = base64.b64encode(image_data).decode('utf-8')
-
-            all_cats = Category.objects.all()
-            cat_list = ", ".join([f'"{c.slug}"' for c in all_cats]) if all_cats else '"khac"'
-
-            result = generate_article(image_base64, keywords, cat_list)
-
-            if not result:
-                send_telegram_message(chat_id, "Trục trặc kỹ thuật: Hệ thống phân tích Vision không phản hồi.")
-                return HttpResponse("OK", status=200)
-
-            ai_title, ai_content, ai_category_slug = result
-
-            try:
-                unique_img_id = f"tele_{file_id[:8]}_{int(time.time() * 1000)}"
-
-                upload_result = cloudinary.uploader.upload(
-                    image_data,
-                    public_id=unique_img_id,
-                    folder="news"
-                )
-
-                new_post = Post(
-                    title=ai_title,
-                    content=ai_content,
-                    image_file=upload_result.get("public_id")
-                )
-                new_post.save()
-
-                if ai_category_slug:
-                    try:
-                        cat = Category.objects.get(slug=ai_category_slug)
-                        new_post.categories.add(cat)
-                    except Category.DoesNotExist:
-                        pass
-
-                send_telegram_message(
-                    chat_id,
-                    f"ĐÃ TỰ ĐỘNG ĐĂNG BÀI THÀNH CÔNG!\n\nTiêu đề: {ai_title}\n\nLink đọc bài viết: {WEB_URL}"
-                )
-
-            except Exception as save_error:
-                print("SAVE ERROR:", save_error)
-                send_telegram_message(chat_id, f"Lỗi ghi bài viết: {str(save_error)[:100]}")
-
-        # =====================================================
-        # NHANH 2: TEXT -> CHATBOT HOI DAP + WEB SEARCH
-        # =====================================================
-        elif "text" in message:
-            user_text = message["text"]
-
-            if user_text.strip() == "/start":
-                send_telegram_message(
-                    chat_id,
-                    "Bot Trợ Lý Thể Thao Đã Sẵn Sàng!\n\n"
-                    "[Gửi ảnh kèm Caption] -> Hệ thống tự động dùng Llama 4 phân tích, viết bài báo chuẩn SEO dài 300 từ và đăng trực tiếp lên website của bạn.\n\n"
-                    "[Gửi tin nhắn văn bản] -> Hỏi đáp chuyên sâu, tra cứu tỷ số, chuyển nhượng thể thao mới nhất.\n\n"
-                    "[Gửi '/livescore' hoặc 'cập nhật tỷ số'] -> Tự động tìm kiếm và cập nhật tỷ số bóng đá hôm nay."
-                )
-                return HttpResponse("OK", status=200)
-
-            # LIVE SCORE UPDATE
-            text_lower = user_text.strip().lower()
-            if text_lower in ("/livescore", "/score", "cập nhật tỷ số", "cap nhat ty so", "update score", "tỷ số", "ty so"):
-                send_telegram_message(chat_id, "Đang tìm kiếm tỷ số bóng đá hôm nay...")
-                scores = fetch_and_parse_scores()
-                if scores and len(scores) > 0:
-                    LiveScore.objects.all().delete()
-                    for s in scores:
-                        LiveScore.objects.create(
-                            team_a=str(s.get("team_a", "??")),
-                            team_b=str(s.get("team_b", "??")),
-                            score_a=int(s.get("score_a", 0)),
-                            score_b=int(s.get("score_b", 0)),
-                            status=str(s.get("status", "ft")),
-                            match_date=datetime.date.today()
-                        )
-                    reply = "ĐÃ CẬP NHẬT TỶ SỐ!\n\n"
-                    for s in scores:
-                        icon = {"live": "🔴", "ht": "🟡", "ft": "⚪"}.get(s.get("status", ""), "⚪")
-                        reply += f"{icon} {s['team_a']} {s['score_a']}-{s['score_b']} {s['team_b']}\n"
-                    send_telegram_message(chat_id, reply)
-                else:
-                    send_telegram_message(chat_id, "Không tìm thấy tỷ số nào. Thử lại sau.")
-                return HttpResponse("OK", status=200)
-
-            send_telegram_message(chat_id, "Đang trả lời...")
-            bot_reply_text = chat_with_ai(user_text)
-            send_telegram_message(chat_id, bot_reply_text)
+        try:
+            thread = threading.Thread(
+                target=_run_background_update,
+                args=(update, chat_id, update_id),
+                daemon=True,
+            )
+            thread.start()
+        except Exception as exc:
+            WEBHOOK_SEMAPHORE.release()
+            _mark_update(update_id, "failed")
+            print(f"THREAD START ERROR: {exc}")
 
         return HttpResponse("OK", status=200)
 
-    except Exception as e:
-        print("CRITICAL WEBHOOK ERROR:", e)
+    except Exception as exc:
+        print("CRITICAL WEBHOOK ERROR:", exc)
         return HttpResponse("OK", status=200)
