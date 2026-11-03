@@ -1,0 +1,40 @@
+<div class="bg-[#0f0f0f] border-b-2 border-[#c0152a] h-9 flex items-center overflow-hidden">
+    <div class="shrink-0 bg-[#c0152a] h-full flex items-center gap-2 px-4">
+        <span class="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
+        <span class="font-display text-white text-[11px] font-bold tracking-widest">LIVE</span>
+    </div>
+    <div class="ticker-wrap flex-1 h-full flex items-center">
+        <div class="ticker-track text-white text-[11px] font-display tracking-wide">
+            <div class="flex shrink-0">
+                {% for score in live_scores %}
+                <span class="flex items-center gap-2 px-5 border-r border-gray-700 h-9 whitespace-nowrap">
+                    {% if score.status == 'live' %}<span class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>
+                    {% elif score.status == 'ht' %}<span class="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse"></span>
+                    {% else %}<span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>{% endif %}
+                    {{ score.display }}
+                </span>
+                {% empty %}
+                <span class="flex items-center gap-2 px-5 border-r border-gray-700 h-9 whitespace-nowrap"><span class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>ENG 2 - 1 GER <span class="text-gray-400">(FT)</span></span>
+                <span class="flex items-center gap-2 px-5 border-r border-gray-700 h-9 whitespace-nowrap"><span class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>FRA 0 - 0 ITA <span class="text-gray-400">(30')</span></span>
+                <span class="flex items-center gap-2 px-5 border-r border-gray-700 h-9 whitespace-nowrap"><span class="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse"></span>VIE 1 - 0 THA <span class="text-gray-400">(HT)</span></span>
+                <span class="flex items-center gap-2 px-5 border-r border-gray-700 h-9 whitespace-nowrap"><span class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>ESP 3 - 2 BRA <span class="text-gray-400">(67')</span></span>
+                {% endfor %}
+            </div>
+            <div class="flex shrink-0" aria-hidden="true">
+                {% for score in live_scores %}
+                <span class="flex items-center gap-2 px-5 border-r border-gray-700 h-9 whitespace-nowrap">
+                    {% if score.status == 'live' %}<span class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>
+                    {% elif score.status == 'ht' %}<span class="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse"></span>
+                    {% else %}<span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>{% endif %}
+                    {{ score.display }}
+                </span>
+                {% empty %}
+                <span class="flex items-center gap-2 px-5 border-r border-gray-700 h-9 whitespace-nowrap"><span class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>ENG 2 - 1 GER <span class="text-gray-400">(FT)</span></span>
+                <span class="flex items-center gap-2 px-5 border-r border-gray-700 h-9 whitespace-nowrap"><span class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>FRA 0 - 0 ITA <span class="text-gray-400">(30')</span></span>
+                <span class="flex items-center gap-2 px-5 border-r border-gray-700 h-9 whitespace-nowrap"><span class="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse"></span>VIE 1 - 0 THA <span class="text-gray-400">(HT)</span></span>
+                <span class="flex items-center gap-2 px-5 border-r border-gray-700 h-9 whitespace-nowrap"><span class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>ESP 3 - 2 BRA <span class="text-gray-400">(67')</span></span>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>

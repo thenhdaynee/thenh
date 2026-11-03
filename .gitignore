@@ -1,4 +1,5 @@
-v環境/
+venv/
+.venv/
 __pycache__/
 *.pyc
 db.sqlite3
@@ -6,3 +7,6 @@ media/
 .vscode/
 .env
 staticfiles/
+
+# Prototype/nháp thiết kế - không commit
+prototypes/

@@ -8,10 +8,11 @@
     position: fixed;
     bottom: 24px;
     right: 24px;
-    width: 56px;
-    height: 56px;
-    border-radius: 50%;
-    background: #c0152a;
+    min-width: 58px;
+    height: 58px;
+    padding: 0 17px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #c0152a, #8f0d1e);
     color: #fff;
     border: none;
     cursor: pointer;
@@ -19,79 +20,157 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 4px 20px rgba(192,21,42,0.4);
-    transition: transform .25s, box-shadow .25s;
+    gap: 8px;
+    box-shadow: 0 8px 28px rgba(192, 21, 42, 0.4);
+    transition: transform 0.25s, box-shadow 0.25s;
 }
 #ai-chat-btn:hover {
-    transform: scale(1.08);
-    box-shadow: 0 6px 28px rgba(192,21,42,0.55);
+    transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 12px 34px rgba(192, 21, 42, 0.5);
 }
 #ai-chat-btn svg {
-    width: 26px;
-    height: 26px;
+    width: 25px;
+    height: 25px;
+    flex-shrink: 0;
 }
+#ai-chat-btn .ai-btn-label {
+    max-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    transition: max-width 0.3s ease, margin 0.3s ease;
+}
+#ai-chat-btn:hover .ai-btn-label {
+    max-width: 100px;
+    margin-left: 2px;
+}
+#ai-chat-btn .ai-btn-ping {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    width: 12px;
+    height: 12px;
+}
+#ai-chat-btn .ai-btn-ping::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: #f3a0ad;
+    animation: ai-ping 1.6s ease-out infinite;
+}
+#ai-chat-btn .ai-btn-ping::after {
+    content: '';
+    position: absolute;
+    inset: 2px;
+    border-radius: 50%;
+    background: #fff;
+}
+@keyframes ai-ping {
+    0% { transform: scale(1); opacity: 0.8; }
+    100% { transform: scale(2.3); opacity: 0; }
+}
+
 #ai-chat-panel {
     position: fixed;
-    bottom: 90px;
+    bottom: 92px;
     right: 24px;
-    width: 370px;
-    max-width: calc(100vw - 48px);
-    height: 520px;
-    max-height: calc(100vh - 120px);
-    background: #1a1a1a;
-    border-radius: 16px;
+    width: 382px;
+    max-width: calc(100vw - 32px);
+    height: 540px;
+    max-height: calc(100vh - 130px);
+    background: var(--bg-card, #fff);
+    border-radius: 20px;
     display: none;
     flex-direction: column;
     z-index: 9998;
-    box-shadow: 0 8px 40px rgba(0,0,0,0.5);
-    border: 1px solid #333;
+    box-shadow: 0 20px 60px rgba(15, 23, 42, 0.28);
+    border: 1px solid var(--border-card, #e5e7eb);
     overflow: hidden;
-    font-family: 'Segoe UI', system-ui, sans-serif;
+    font-family: 'Inter', sans-serif;
+    animation: ai-panel-in 0.22s ease both;
 }
 #ai-chat-panel.open {
     display: flex;
 }
+@keyframes ai-panel-in {
+    from { opacity: 0; transform: translateY(12px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
 #ai-chat-header {
-    background: #0f0f0f;
-    padding: 14px 18px;
+    background: linear-gradient(135deg, #c0152a, #8f0d1e);
+    padding: 14px 16px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    border-bottom: 2px solid #c0152a;
     flex-shrink: 0;
+}
+#ai-chat-header .ai-head-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+#ai-chat-header .ai-avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 11px;
+    background: rgba(255, 255, 255, 0.18);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(6px);
+}
+#ai-chat-header .ai-avatar svg {
+    width: 20px;
+    height: 20px;
+    color: #fff;
 }
 #ai-chat-header h3 {
     color: #fff;
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 700;
-    letter-spacing: 0.3px;
+    letter-spacing: 0.1px;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 7px;
 }
 #ai-chat-header h3 span {
     display: inline-block;
-    width: 8px;
-    height: 8px;
-    background: #22c55e;
+    width: 7px;
+    height: 7px;
+    background: #34d399;
     border-radius: 50%;
-    animation: pulse-dot 1.8s infinite;
+    box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.2);
+    animation: ai-online 1.8s infinite;
 }
-@keyframes pulse-dot {
-    0%,100% { opacity: 1; }
-    50% { opacity: 0.3; }
+#ai-chat-header p {
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 10.5px;
+    margin-top: 1px;
+}
+@keyframes ai-online {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.35; }
 }
 #ai-chat-close {
-    background: none;
+    background: rgba(255, 255, 255, 0.12);
     border: none;
-    color: #888;
-    font-size: 22px;
-    cursor: pointer;
+    color: rgba(255, 255, 255, 0.9);
+    width: 30px;
+    height: 30px;
+    border-radius: 9px;
+    font-size: 20px;
     line-height: 1;
-    padding: 0 4px;
-    transition: color .2s;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
 }
 #ai-chat-close:hover {
+    background: rgba(255, 255, 255, 0.24);
     color: #fff;
 }
 #ai-chat-msgs {
@@ -101,95 +180,139 @@
     display: flex;
     flex-direction: column;
     gap: 10px;
-    background: #1a1a1a;
+    background: var(--bg-section, #f8f9fb);
 }
 #ai-chat-msgs::-webkit-scrollbar {
     width: 5px;
 }
 #ai-chat-msgs::-webkit-scrollbar-thumb {
-    background: #444;
+    background: #cbd0d8;
     border-radius: 3px;
 }
 .ai-msg {
     max-width: 88%;
     padding: 10px 14px;
-    border-radius: 14px;
-    font-size: 14px;
-    line-height: 1.5;
+    border-radius: 16px;
+    font-size: 13px;
+    line-height: 1.55;
     word-wrap: break-word;
-    animation: msg-in .3s ease;
+    animation: ai-msg-in 0.25s ease;
 }
-@keyframes msg-in {
-    from { opacity: 0; transform: translateY(8px); }
+@keyframes ai-msg-in {
+    from { opacity: 0; transform: translateY(6px); }
     to { opacity: 1; transform: translateY(0); }
 }
 .ai-msg.user {
     align-self: flex-end;
     background: #c0152a;
     color: #fff;
-    border-bottom-right-radius: 4px;
+    border-bottom-right-radius: 5px;
 }
 .ai-msg.bot {
     align-self: flex-start;
-    background: #2a2a2a;
-    color: #e0e0e0;
-    border-bottom-left-radius: 4px;
+    background: var(--bg-card, #fff);
+    color: var(--text-body, #111);
+    border: 1px solid var(--border-card, #eef0f3);
+    border-bottom-left-radius: 5px;
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
 }
 .ai-msg.error {
     align-self: flex-start;
     background: #2d1a1a;
     color: #f87171;
-    border-bottom-left-radius: 4px;
+    border-bottom-left-radius: 5px;
 }
 .ai-msg.loading {
     align-self: flex-start;
-    background: #2a2a2a;
-    color: #aaa;
-    display: flex;
+    background: var(--bg-card, #fff);
+    border: 1px solid var(--border-card, #eef0f3);
+    border-bottom-left-radius: 5px;
+    padding: 12px 15px;
+}
+.ai-typing {
+    display: inline-flex;
     align-items: center;
-    gap: 8px;
-    padding: 12px 16px;
+    gap: 4px;
 }
-.ai-spinner {
-    display: inline-block;
-    width: 16px;
-    height: 16px;
-    border: 2px solid #555;
-    border-top-color: #c0152a;
+.ai-typing i {
+    width: 6px;
+    height: 6px;
     border-radius: 50%;
-    animation: spin .7s linear infinite;
+    background: #c0152a;
+    display: block;
+    animation: ai-bounce 1s infinite ease-in-out;
 }
-@keyframes spin {
-    to { transform: rotate(360deg); }
+.ai-typing i:nth-child(2) { animation-delay: 0.15s; }
+.ai-typing i:nth-child(3) { animation-delay: 0.3s; }
+@keyframes ai-bounce {
+    0%, 80%, 100% { transform: translateY(0); opacity: 0.45; }
+    40% { transform: translateY(-4px); opacity: 1; }
+}
+#ai-chat-prompts {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    padding: 9px 12px;
+    background: var(--bg-card, #fff);
+    border-top: 1px solid var(--border-card, #eef0f3);
+    flex-shrink: 0;
+    scrollbar-width: none;
+}
+#ai-chat-prompts::-webkit-scrollbar { display: none; }
+.ai-prompt {
+    white-space: nowrap;
+    background: var(--bg-section, #f4f5f7);
+    border: 1px solid var(--border-card, #e5e7eb);
+    color: var(--text-secondary, #4b5563);
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 6px 10px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+.ai-prompt:hover {
+    background: #fdf2f4;
+    color: #a30f24;
+    border-color: #f3c7d0;
+}
+[data-theme="dark"] .ai-prompt:hover {
+    background: #2a1418;
+    color: #f3a0ad;
+    border-color: #5a2028;
 }
 #ai-chat-input-wrap {
     display: flex;
-    padding: 12px 14px;
+    align-items: center;
     gap: 8px;
-    background: #0f0f0f;
-    border-top: 1px solid #333;
+    padding: 11px 12px;
+    background: var(--bg-card, #fff);
+    border-top: 1px solid var(--border-card, #eef0f3);
     flex-shrink: 0;
 }
 #ai-chat-input {
     flex: 1;
-    background: #2a2a2a;
-    border: 1px solid #444;
-    border-radius: 24px;
-    padding: 10px 16px;
-    color: #fff;
-    font-size: 14px;
+    background: var(--bg-section, #f4f5f7);
+    border: 1px solid var(--border-card, #e5e7eb);
+    border-radius: 999px;
+    padding: 10px 15px;
+    color: var(--text-body, #111);
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
     outline: none;
-    transition: border .2s;
+    transition: border 0.2s, background 0.2s;
 }
 #ai-chat-input:focus {
     border-color: #c0152a;
+    background: var(--bg-card, #fff);
 }
 #ai-chat-input::placeholder {
-    color: #777;
+    color: var(--text-muted, #9ca3af);
 }
 #ai-chat-send {
-    width: 40px;
-    height: 40px;
+    width: 38px;
+    height: 38px;
     border-radius: 50%;
     background: #c0152a;
     color: #fff;
@@ -199,51 +322,60 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background .2s;
+    transition: background 0.2s, transform 0.2s;
 }
 #ai-chat-send:hover {
     background: #a01222;
+    transform: scale(1.04);
 }
 #ai-chat-send:disabled {
-    opacity: 0.5;
+    opacity: 0.45;
     cursor: not-allowed;
+    transform: none;
 }
 #ai-chat-send svg {
-    width: 18px;
-    height: 18px;
+    width: 17px;
+    height: 17px;
 }
 </style>
 
 <div id="ai-chat-widget">
     <button id="ai-chat-btn" aria-label="Mở trợ lý AI">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-            <line x1="9" y1="10" x2="15" y2="10"/>
-            <line x1="12" y1="7" x2="12" y2="13"/>
+            <path d="M8 9h8M8 13h5"/>
         </svg>
+        <span class="ai-btn-label">Trợ lý AI</span>
+        <span class="ai-btn-ping"></span>
     </button>
 
-    <div id="ai-chat-panel">
+    <div id="ai-chat-panel" role="dialog" aria-label="Trợ lý AI thể thao">
         <div id="ai-chat-header">
-            <h3>
-                <svg viewBox="0 0 24 24" fill="none" stroke="#c0152a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
-                    <circle cx="12" cy="12" r="10"/>
-                    <path d="M12 6v6l4 2"/>
-                </svg>
-                AI Trợ lý Thể thao
-                <span></span>
-            </h3>
-            <button id="ai-chat-close">&times;</button>
+            <div class="ai-head-left">
+                <span class="ai-avatar">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="7" width="16" height="12" rx="3"/><path d="M9 7V5h6v2M9 12h.01M15 12h.01M9 16h6"/></svg>
+                </span>
+                <div>
+                    <h3>AI Trợ lý Thể thao <span></span></h3>
+                    <p>Sẵn sàng hỗ trợ 24/7</p>
+                </div>
+            </div>
+            <button id="ai-chat-close" aria-label="Đóng trợ lý AI">&times;</button>
         </div>
-        <div id="ai-chat-msgs">
+        <div id="ai-chat-msgs" aria-live="polite">
             <div class="ai-msg bot">
-                Chào bạn! Mình là trợ lý AI Thể thao của <strong>THENHDEPTRAI</strong>. Bạn có thể hỏi tôi bất kỳ tin tức thể thao, kết quả trận đấu, chuyển nhượng mới nhất!
+                Chào bạn! Mình là trợ lý AI Thể thao của <strong>THENHDEPTRAI</strong>. Bạn có thể hỏi tôi về tin tức thể thao, kết quả trận đấu, chuyển nhượng mới nhất!
             </div>
         </div>
+        <div id="ai-chat-prompts" aria-label="Câu hỏi gợi ý">
+            <button type="button" class="ai-prompt" data-prompt="Tóm tắt tin thể thao hôm nay">Tóm tắt tin hôm nay</button>
+            <button type="button" class="ai-prompt" data-prompt="Phân tích phong độ Manchester United">Phân tích MU</button>
+            <button type="button" class="ai-prompt" data-prompt="Lịch thi đấu bóng đá hôm nay">Lịch thi đấu</button>
+        </div>
         <div id="ai-chat-input-wrap">
-            <input id="ai-chat-input" type="text" placeholder="Nhập câu hỏi thể thao..." autocomplete="off">
+            <input id="ai-chat-input" type="text" placeholder="Hỏi AI về tin tức thể thao..." autocomplete="off">
             <button id="ai-chat-send" aria-label="Gửi">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                     <line x1="22" y1="2" x2="11" y2="13"/>
                     <polygon points="22 2 15 22 11 13 2 9 22 2"/>
                 </svg>
@@ -260,6 +392,7 @@
     var msgsEl = document.getElementById('ai-chat-msgs');
     var input = document.getElementById('ai-chat-input');
     var sendBtn = document.getElementById('ai-chat-send');
+    var promptButtons = document.querySelectorAll('.ai-prompt');
     var loading = false;
 
     function openPanel() {
@@ -273,8 +406,16 @@
         btn.style.display = 'flex';
     }
 
+    window.openAiChat = openPanel;
     btn.addEventListener('click', openPanel);
     closeBtn.addEventListener('click', closePanel);
+
+    promptButtons.forEach(function(prompt) {
+        prompt.addEventListener('click', function() {
+            input.value = prompt.getAttribute('data-prompt') || prompt.textContent;
+            input.focus();
+        });
+    });
 
     function scrollBottom() {
         msgsEl.scrollTop = msgsEl.scrollHeight;
@@ -293,10 +434,10 @@
         var div = document.createElement('div');
         div.className = 'ai-msg loading';
         div.id = 'ai-loading-msg';
-        var spinner = document.createElement('span');
-        spinner.className = 'ai-spinner';
-        div.appendChild(spinner);
-        div.appendChild(document.createTextNode(' Đang trả lời...'));
+        var dots = document.createElement('span');
+        dots.className = 'ai-typing';
+        dots.innerHTML = '<i></i><i></i><i></i>';
+        div.appendChild(dots);
         msgsEl.appendChild(div);
         scrollBottom();
     }
@@ -326,12 +467,12 @@
                 try {
                     var data = JSON.parse(text);
                     if (!r.ok) {
-                        throw new Error(data.error || 'Loi may chu (ma ' + r.status + ')');
+                        throw new Error(data.error || 'Lỗi máy chủ (mã ' + r.status + ')');
                     }
                     return data;
                 } catch (e) {
                     if (e instanceof SyntaxError) {
-                        throw new Error('May chu tra ve trang HTML (ma ' + r.status + '). Vui long thu lai sau.');
+                        throw new Error('Máy chủ trả về trang HTML (mã ' + r.status + '). Vui lòng thử lại sau.');
                     }
                     throw e;
                 }
@@ -339,11 +480,11 @@
         })
         .then(function(data) {
             removeLoading();
-            addMsg(data.reply || 'Khong nhan duoc phan hoi.', 'bot');
+            addMsg(data.reply || 'Không nhận được phản hồi.', 'bot');
         })
         .catch(function(err) {
             removeLoading();
-            addMsg('Loi: ' + err.message, 'error');
+            addMsg('Lỗi: ' + err.message, 'error');
         })
         .finally(function() {
             loading = false;

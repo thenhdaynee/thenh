@@ -1,424 +1,224 @@
-{% load static %}
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% if current_category %}{{ current_category.icon }} {{ current_category.name }} - {% endif %}{% if query %}Tìm kiếm: {{ query }} - {% endif %}THENHDEPTRAI - Tin Tuc The Thao 24h</title>
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <link rel="stylesheet" href="{% static 'style.css' %}">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,400&display=swap" rel="stylesheet">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23c0152a'/><text x='50' y='70' text-anchor='middle' font-size='60' font-weight='bold' fill='white' font-family='Arial'>T</text></svg>">
-    <style>
-        :root { --red: #c0152a; --red-dark: #96101f; }
-        body { font-family: 'Source Serif 4', Georgia, serif; }
-        .font-display { font-family: 'Oswald', sans-serif; }
+{% extends 'base.html' %}
 
-        .ticker-wrap { overflow: hidden; }
-        .ticker-track {
-            display: flex;
-            animation: ticker-scroll 28s linear infinite;
-            width: max-content;
-        }
-        .ticker-wrap:hover .ticker-track { animation-play-state: paused; }
-        @keyframes ticker-scroll {
-            0%   { transform: translateX(0); }
-            100% { transform: translateX(-50%); }
-        }
+{% block title %}{% if current_category %}{{ current_category.icon }} {{ current_category.name }} - {% endif %}{% if query %}Tìm kiếm: {{ query }} - {% endif %}THENHDEPTRAI - Tin tức thể thao 24h{% endblock %}
 
-        .zoom-img { overflow: hidden; }
-        .zoom-img img { transition: transform .4s ease; }
-        .zoom-img:hover img { transform: scale(1.06); }
-
-        @keyframes pulse-ring {
-            0%   { transform: scale(1); opacity: .8; }
-            100% { transform: scale(2.4); opacity: 0; }
-        }
-        .live-ring::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            border-radius: 50%;
-            background: #fff;
-            animation: pulse-ring 1.4s ease-out infinite;
-        }
-
-        .sec-line { border-bottom: 2px solid #c0152a; }
-    </style>
-</head>
-<body class="bg-[#f0f0f0] text-[#111]">
-
-<header class="bg-[#0f0f0f] sticky top-0 z-50 shadow-lg">
-    <div class="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
-        <a href="/" class="font-display text-2xl font-bold tracking-widest text-white shrink-0">
-            THENH<span class="text-[#c0152a]">DEPTRAI</span>
-        </a>
-        <nav class="hidden md:flex items-center">
-            {% for cat in categories %}
-            <a href="{% url 'category_view' cat.slug %}" class="font-display text-sm {% if current_category and current_category.slug == cat.slug %}text-white bg-[#c0152a]{% else %}text-gray-300 hover:text-white hover:bg-[#c0152a]{% endif %} px-4 py-2 transition-colors tracking-wide">
-                {{ cat.icon }} {{ cat.name }}
-            </a>
-            {% endfor %}
-        </nav>
-        <div class="flex items-center gap-2">
-            <form action="{% url 'search' %}" method="GET" class="hidden md:flex items-center bg-[#1a1a1a] border border-gray-700 focus-within:border-[#c0152a] transition-colors">
-                <input type="text" name="q" value="{{ query }}" placeholder="Tìm kiếm..."
-                    class="bg-transparent text-white text-xs px-3 py-2 w-36 focus:outline-none">
-                <button type="submit" class="text-gray-400 hover:text-white px-2 text-sm">🔍</button>
-            </form>
-            <a href="#" class="shrink-0 flex items-center gap-2 bg-[#c0152a] hover:bg-[#96101f] text-white font-display text-sm font-bold px-4 py-2 transition-colors">
-                <span class="relative w-2.5 h-2.5">
-                    <span class="live-ring absolute inset-0 rounded-full bg-white opacity-60"></span>
-                    <span class="relative block w-2.5 h-2.5 rounded-full bg-white"></span>
-                </span>
-                LIVE 24/7
-            </a>
-            <button id="theme-toggle" aria-label="Chế độ sáng/tối" title="Chế độ sáng/tối" style="background:none;border:none;cursor:pointer;font-size:18px;padding:4px 8px;color:#fff">🌙</button>
-            <button id="hamburger" class="md:hidden text-white text-2xl p-1 leading-none" aria-label="Menu">☰</button>
-        </div>
-    </div>
-    <div id="mobile-menu" class="hidden md:hidden bg-[#0f0f0f] border-t border-gray-800 px-4 pb-4">
-        <form action="{% url 'search' %}" method="GET" class="flex mb-3 mt-3 bg-[#1a1a1a] border border-gray-700 focus-within:border-[#c0152a] transition-colors">
-            <input type="text" name="q" value="{{ query }}" placeholder="Tìm kiếm..."
-                class="bg-transparent text-white text-xs px-3 py-2.5 flex-1 focus:outline-none">
-            <button type="submit" class="text-gray-400 hover:text-white px-3 text-sm">🔍</button>
-        </form>
-        {% for cat in categories %}
-        <a href="{% url 'category_view' cat.slug %}" class="block font-display text-sm text-gray-300 hover:text-white hover:bg-[#c0152a] px-4 py-2.5 transition-colors tracking-wide rounded">
-            {{ cat.icon }} {{ cat.name }}
-        </a>
-        {% endfor %}
-    </div>
-</header>
-
-<div class="bg-[#1a1a1a] border-b-2 border-[#c0152a] h-9 flex items-center">
-    <div class="shrink-0 bg-[#c0152a] h-full flex items-center px-4">
-        <span class="font-display text-white text-xs font-bold tracking-widest">LIVE</span>
-    </div>
-    <div class="ticker-wrap flex-1 h-full flex items-center">
-        <div class="ticker-track text-white text-xs font-display tracking-wide gap-0">
-            {% for score in live_scores %}
-            <span class="flex items-center gap-2 px-5 border-r border-gray-700 h-9">
-                {% if score.status == 'live' %}<span class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>
-                {% elif score.status == 'ht' %}<span class="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse"></span>
-                {% else %}<span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>{% endif %}
-                {{ score.display }}
+{% block content %}
+<div class="page-enter">
+    {% if query or current_category %}
+    <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-6">
+        <div>
+            {% if query %}
+            <span class="ai-soft inline-flex items-center gap-1.5 border rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wider mb-2">
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+                Tìm kiếm
             </span>
-            {% empty %}
-            <span class="flex items-center gap-2 px-5 border-r border-gray-700 h-9"><span class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>ENG 2 - 1 GER <span class="text-gray-400">(FT)</span></span>
-            <span class="flex items-center gap-2 px-5 border-r border-gray-700 h-9"><span class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>FRA 0 - 0 ITA <span class="text-gray-400">(30')</span></span>
-            <span class="flex items-center gap-2 px-5 border-r border-gray-700 h-9"><span class="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse"></span>VIE 1 - 0 THA <span class="text-gray-400">(HT)</span></span>
-            <span class="flex items-center gap-2 px-5 border-r border-gray-700 h-9"><span class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>ESP 3 - 2 BRA <span class="text-gray-400">(67')</span></span>
-            <span class="flex items-center gap-2 px-5 border-r border-gray-700 h-9"><span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>ARG 1 - 1 POR <span class="text-gray-400">(FT)</span></span>
-            {% endfor %}
-        </div>
-    </div>
-</div>
-
-<main class="max-w-7xl mx-auto px-4 py-6">
-
-    <!-- Search bar mobile -->
-    <form action="{% url 'search' %}" method="GET" class="md:hidden flex mb-4 bg-white border border-gray-300 focus-within:border-[#c0152a] transition-colors">
-        <input type="text" name="q" value="{{ query }}" placeholder="Tìm kiếm bai viet..."
-            class="bg-transparent text-gray-700 text-sm px-4 py-2.5 flex-1 focus:outline-none">
-        <button type="submit" class="bg-[#c0152a] hover:bg-[#96101f] text-white px-4 text-sm font-bold">🔍</button>
-    </form>
-
-    {% if query %}
-    <div class="sec-line flex items-center justify-between pb-2 mb-4">
-        <h2 class="font-display text-lg font-bold tracking-widest uppercase text-[#111]">
-            <span class="inline-block w-1.5 h-5 bg-[#c0152a] mr-2 align-middle rounded-sm"></span>Ket qua tìm kiếm: "{{ query }}"
-        </h2>
-    </div>
-    {% endif %}
-
-    {% if current_category %}
-    <div class="sec-line flex items-center justify-between pb-2 mb-4">
-        <h2 class="font-display text-lg font-bold tracking-widest uppercase text-[#111]">
-            <span class="inline-block w-1.5 h-5 bg-[#c0152a] mr-2 align-middle rounded-sm"></span>{{ current_category.icon }} {{ current_category.name }}
-        </h2>
-    </div>
-    {% endif %}
-
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-
-        <div class="lg:col-span-2">
-            {% if latest_posts %}
-            {% with first_post=latest_posts.0 %}
-            <a href="{% url 'post_detail' first_post.pk %}" class="bg-white group block h-full border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-                <div class="zoom-img aspect-video w-full bg-gray-200">
-                    {% if first_post.image_file %}
-                        <img src="{{ first_post.image_file.url }}" alt="{{ first_post.title }}" class="w-full h-full object-cover" loading="lazy">
-                    {% elif first_post.image_url %}
-                        <img src="{{ first_post.image_url }}" alt="{{ first_post.title }}" class="w-full h-full object-cover" loading="lazy">
-                    {% else %}
-                        <img src="https://placehold.co/800x450/ccc/888?text=No+Image" alt="No image" class="w-full h-full object-cover" loading="lazy">
-                    {% endif %}
-                </div>
-                <div class="p-4">
-                    {% for cat in first_post.categories.all %}
-                    <span class="font-display text-[#c0152a] text-[11px] font-bold tracking-widest uppercase">{{ cat.icon }} {{ cat.name }}</span>
-                    {% endfor %}
-                    <h1 class="font-display text-xl md:text-2xl font-bold leading-snug text-[#111] group-hover:text-[#c0152a] transition-colors mt-1">
-                        {{ first_post.title }}
-                    </h1>
-                    <p class="text-gray-500 text-sm leading-relaxed mt-2 line-clamp-2">
-                        {{ first_post.content|truncatewords:30 }}
-                    </p>
-                    <p class="text-gray-400 text-xs font-display tracking-wide mt-3">
-                        {{ first_post.created_at|date:"d/m/Y  H:i" }}
-                    </p>
-                </div>
-            </a>
-            {% endwith %}
+            <h1 class="text-2xl sm:text-3xl font-bold text-[#111]">Kết quả cho “{{ query }}”</h1>
+            {% else %}
+            <span class="ai-soft inline-flex items-center gap-1.5 border rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wider mb-2">
+                {{ current_category.icon }} Chuyên mục
+            </span>
+            <h1 class="text-2xl sm:text-3xl font-bold text-[#111]">{{ current_category.name }}</h1>
             {% endif %}
+            <p class="text-gray-500 text-sm mt-1">{{ latest_posts|length }} bài viết được tìm thấy</p>
         </div>
+        <a href="{% url 'all_posts' %}" class="inline-flex items-center gap-1 text-sm font-semibold text-[#c0152a] hover:underline">
+            Xem tất cả bài viết
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+        </a>
+    </div>
+    {% endif %}
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {% for post in latest_posts|slice:"1:5" %}
-            <a href="{% url 'post_detail' post.pk %}" class="bg-white border border-gray-200 shadow-sm group flex flex-col justify-between hover:shadow-md transition-all h-full">
-                <div class="zoom-img w-full aspect-video bg-gray-200 shrink-0">
+    {% if latest_posts %}
+    {% with hero=latest_posts.0 %}
+    <a href="{% url 'post_detail' hero.pk %}" class="group relative block w-full h-[420px] sm:h-[500px] rounded-2xl overflow-hidden mb-10 bg-[#0f0f0f] shadow-xl">
+        {% if hero.image_file %}
+        <img src="{{ hero.image_file.url }}" alt="{{ hero.title }}" class="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:opacity-70 group-hover:scale-[1.02] transition-all duration-500" loading="eager">
+        {% elif hero.image_url %}
+        <img src="{{ hero.image_url }}" alt="{{ hero.title }}" class="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:opacity-70 group-hover:scale-[1.02] transition-all duration-500" loading="eager">
+        {% else %}
+        <img src="https://placehold.co/1600x900/0f0f0f/333?text=THENH+SPORTS" alt="{{ hero.title }}" class="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:opacity-70 group-hover:scale-[1.02] transition-all duration-500" loading="eager">
+        {% endif %}
+        <div class="absolute inset-0 bg-gradient-to-t from-[#0f0f0f] via-[#0f0f0f]/55 to-transparent"></div>
+        <div class="absolute bottom-0 left-0 p-5 sm:p-8 lg:p-10 max-w-3xl">
+            <div class="flex flex-wrap items-center gap-2 mb-4">
+                {% for cat in hero.categories.all %}
+                <span class="bg-[#c0152a] text-white text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">{{ cat.icon }} {{ cat.name }}</span>
+                {% endfor %}
+                <span class="flex items-center gap-1.5 text-[#f3a0ad] text-xs font-semibold bg-white/10 border border-white/15 px-3 py-1 rounded-full backdrop-blur-sm">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M13 2 4.5 13H11l-1 9 8.5-11H12l1-9z"/></svg>
+                    Tin nóng
+                </span>
+            </div>
+            <h1 class="text-2xl sm:text-4xl lg:text-5xl font-bold text-white leading-tight mb-3 group-hover:text-[#f3a0ad] transition-colors">{{ hero.title }}</h1>
+            <p class="text-gray-300 text-sm sm:text-base lg:text-lg leading-relaxed mb-5 line-clamp-2">{{ hero.content|striptags|truncatewords:28 }}</p>
+            <div class="flex flex-wrap items-center gap-4 text-gray-400 text-xs sm:text-sm">
+                <span class="flex items-center gap-1.5">
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.5"/></svg>
+                    {{ hero.views_count }} lượt xem
+                </span>
+                <span>{{ hero.created_at|date:"d/m/Y H:i" }}</span>
+            </div>
+        </div>
+    </a>
+    {% endwith %}
+
+    {% with ai_posts=featured_posts|default:trending_posts %}
+    {% if ai_posts %}
+    <section class="mb-12">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
+            <h2 class="flex items-center gap-2.5 text-xl sm:text-2xl font-bold text-[#111]">
+                <span class="w-9 h-9 rounded-xl ai-soft border flex items-center justify-center">
+                    <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3Z"/><path d="M19 17v4M17 19h4"/></svg>
+                </span>
+                AI Đề Xuất Cho Bạn
+            </h2>
+            <div class="flex items-center gap-3">
+                <button type="button" onclick="window.openAiChat && window.openAiChat()" class="hidden sm:inline-flex items-center gap-1.5 text-xs font-semibold ai-soft border px-3 py-1.5 rounded-full transition-colors hover:opacity-80">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3Z"/></svg>
+                    Hỏi AI phân tích
+                </button>
+                <a href="{% url 'all_posts' %}" class="inline-flex items-center gap-1 text-sm font-semibold text-[#c0152a] hover:underline">
+                    Xem tất cả
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+                </a>
+            </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {% for post in ai_posts|slice:":2" %}
+            <a href="{% url 'post_detail' post.pk %}" class="group bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col sm:flex-row hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300">
+                <div class="relative sm:w-2/5 h-48 sm:h-auto overflow-hidden bg-gray-100">
                     {% if post.image_file %}
-                        <img src="{{ post.image_file.url }}" alt="{{ post.title }}" class="w-full h-full object-cover" loading="lazy">
+                    <img src="{{ post.image_file.url }}" alt="{{ post.title }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">
                     {% elif post.image_url %}
-                        <img src="{{ post.image_url }}" alt="{{ post.title }}" class="w-full h-full object-cover" loading="lazy">
+                    <img src="{{ post.image_url }}" alt="{{ post.title }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">
                     {% else %}
-                        <img src="https://placehold.co/300x200/ccc/888?text=..." alt="No Image" class="w-full h-full object-cover" loading="lazy">
+                    <img src="https://placehold.co/600x400/e5e7eb/9ca3af?text=THENH+SPORTS" alt="{{ post.title }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">
                     {% endif %}
+                    <span class="absolute top-3 left-3 inline-flex items-center gap-1 ai-soft border rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider shadow-sm">
+                        <svg viewBox="0 0 24 24" width="11" height="11" fill="currentColor" aria-hidden="true"><path d="m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3Z"/></svg>
+                        AI đề xuất
+                    </span>
                 </div>
-                <div class="p-3 flex-1 flex flex-col justify-between">
-                    <div>
-                        {% for cat in post.categories.all %}
-                        <span class="font-display text-[#c0152a] text-[10px] font-bold tracking-widest uppercase mb-1 block">{{ cat.icon }} {{ cat.name }}</span>
-                        {% endfor %}
-                        <h3 class="font-display text-xs md:text-sm font-bold leading-snug text-[#111] group-hover:text-[#c0152a] transition-colors line-clamp-2">
-                            {{ post.title }}
-                        </h3>
+                <div class="sm:w-3/5 p-5 flex flex-col justify-center">
+                    {% with cat=post.categories.first %}
+                    {% if cat %}<span class="text-[11px] font-bold text-[#c0152a] uppercase tracking-wider mb-2">{{ cat.name }}</span>{% endif %}
+                    {% endwith %}
+                    <h3 class="text-base sm:text-lg font-bold text-[#111] mb-2 leading-snug line-clamp-2 group-hover:text-[#c0152a] transition-colors">{{ post.title }}</h3>
+                    <p class="text-gray-500 text-sm leading-relaxed line-clamp-2 mb-4">{{ post.content|striptags|truncatewords:22 }}</p>
+                    <div class="mt-auto flex flex-wrap items-center gap-3 text-[11px] text-gray-400">
+                        <span>{{ post.created_at|date:"d/m/Y" }}</span>
+                        <span class="flex items-center gap-1">
+                            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.5"/></svg>
+                            {{ post.views_count }}
+                        </span>
                     </div>
-                    <p class="text-gray-400 text-[10px] mt-2 pt-2 border-t border-gray-50">{{ post.created_at|date:"d/m/Y" }}</p>
                 </div>
             </a>
             {% endfor %}
         </div>
-
-    </div>
-
-    {% if not latest_posts and not query and not current_category %}
-    <div class="text-center py-20 text-gray-400 font-display tracking-wide">
-        Chưa có bài viết nào.
-    </div>
+    </section>
     {% endif %}
+    {% endwith %}
 
-    {% if not latest_posts and query %}
-    <div class="text-center py-20 text-gray-400 font-display tracking-wide">
-        Không tìm thấy bai viet nao voi từ khóa "{{ query }}".
-    </div>
-    {% endif %}
-
-    {% if not latest_posts and current_category %}
-    <div class="text-center py-20 text-gray-400 font-display tracking-wide">
-        Chưa có bài viết nào trong danh muc {{ current_category.icon }} {{ current_category.name }}.
-    </div>
-    {% endif %}
-
-    {% if not query and not current_category %}
-    <div class="sec-line flex items-center justify-between pb-2 mb-4">
-        <h2 class="font-display text-lg font-bold tracking-widest uppercase text-[#111]">
-            <span class="inline-block w-1.5 h-5 bg-[#c0152a] mr-2 align-middle rounded-sm"></span>Thịnh hành
-        </h2>
-        <a href="{% url 'all_posts' %}?sort=trending" class="font-display text-xs text-[#c0152a] hover:underline tracking-wide uppercase">Xem tất cả →</a>
-    </div>
-
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
-        {% for post in trending_posts %}
-        <a href="{% url 'post_detail' post.pk %}" class="group block bg-white border border-gray-200 hover:border-[#c0152a] transition-colors overflow-hidden shadow-sm">
-            <div class="zoom-img aspect-video bg-gray-200">
-                {% if post.image_file %}
-                    <img src="{{ post.image_file.url }}" alt="{{ post.title }}" class="w-full h-full object-cover" loading="lazy">
-                {% elif post.image_url %}
-                    <img src="{{ post.image_url }}" alt="{{ post.title }}" class="w-full h-full object-cover" loading="lazy">
-                {% else %}
-                    <img src="https://placehold.co/400x250/ccc/888?text=..." alt="No Image" class="w-full h-full object-cover" loading="lazy">
-                {% endif %}
-            </div>
-            <div class="p-3">
-                {% for cat in post.categories.all %}
-                <span class="font-display text-[#c0152a] text-[10px] font-bold tracking-widest uppercase">{{ cat.icon }} {{ cat.name }}</span>
-                {% endfor %}
-                <h3 class="font-display text-sm font-bold text-[#111] group-hover:text-[#c0152a] transition-colors leading-snug line-clamp-2 mt-1">
-                    {{ post.title }}
-                </h3>
-                <p class="text-gray-400 text-[11px] mt-2">{{ post.created_at|date:"d/m/Y" }}</p>
-            </div>
-        </a>
-        {% empty %}
-        <div class="col-span-4 text-center py-10 text-gray-400 text-sm font-display">
-            Chưa có dữ liệu bài viết thịnh hành.
-        </div>
-        {% endfor %}
-    </div>
-
-    <div class="sec-line flex items-center justify-between pb-2 mb-4">
-        <h2 class="font-display text-lg font-bold tracking-widest uppercase text-[#111]">
-            <span class="inline-block w-1.5 h-5 bg-[#c0152a] mr-2 align-middle rounded-sm"></span>Tin tức tiêu điểm
-        </h2>
-        <a href="{% url 'all_posts' %}?sort=featured" class="font-display text-xs text-[#c0152a] hover:underline tracking-wide uppercase">Xem tất cả →</a>
-    </div>
-
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mb-10">
-        {% for post in featured_posts %}
-        <article class="bg-white border border-gray-200 shadow-sm hover:shadow-md hover:border-[#c0152a] transition-all overflow-hidden flex flex-col group">
-            <a href="{% url 'post_detail' post.pk %}" class="block zoom-img aspect-video bg-gray-200">
-                {% if post.image_file %}
-                    <img src="{{ post.image_file.url }}" alt="{{ post.title }}" class="w-full h-full object-cover" loading="lazy">
-                {% elif post.image_url %}
-                    <img src="{{ post.image_url }}" alt="{{ post.title }}" class="w-full h-full object-cover" loading="lazy">
-                {% else %}
-                    <img src="https://placehold.co/600x338/ccc/888?text=No+Image" alt="No image" class="w-full h-full object-cover" loading="lazy">
-                {% endif %}
+    {% if latest_posts|length > 1 %}
+    <section class="mb-10">
+        <div class="flex items-center justify-between gap-3 mb-5">
+            <h2 class="flex items-center gap-2 text-xl sm:text-2xl font-bold text-[#111]">
+                <span class="w-1.5 h-6 rounded-sm bg-[#c0152a]"></span>
+                Tin mới nhất
+            </h2>
+            <a href="{% url 'all_posts' %}" class="inline-flex items-center gap-1 text-sm font-semibold text-[#c0152a] hover:underline">
+                Xem tất cả
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
             </a>
-            <div class="p-4 flex flex-col flex-1">
-                <div class="flex items-center gap-2 mb-2">
-                    {% for cat in post.categories.all %}
-                    <span class="font-display bg-[#c0152a] text-white px-2 py-0.5 text-[10px] font-bold tracking-widest uppercase">{{ cat.icon }} {{ cat.name }}</span>
-                    {% endfor %}
-                    <span class="text-gray-400 text-[11px]">{{ post.created_at|date:"d/m/Y" }}</span>
-                </div>
-                <a href="{% url 'post_detail' post.pk %}">
-                    <h3 class="font-display text-base font-bold text-[#111] group-hover:text-[#c0152a] transition-colors leading-snug line-clamp-2 mb-2">
-                        {{ post.title }}
-                    </h3>
-                </a>
-                <p class="text-gray-500 text-sm leading-relaxed line-clamp-2 flex-1">
-                    {{ post.content|truncatewords:18 }}
-                </p>
-                <div class="mt-3 pt-3 border-t border-gray-100 flex justify-between items-center">
-                    <span class="text-gray-400 text-xs">Thể thao 24h</span>
-                    <a href="{% url 'post_detail' post.pk %}" class="font-display text-xs text-[#c0152a] hover:underline tracking-wide">Xem chi tiết →</a>
-                </div>
-            </div>
-        </article>
-        {% empty %}
-        <div class="col-span-3 text-center py-20 text-gray-400 font-display tracking-wide text-sm">
-            Chưa có bài viết tiêu điểm nào · Hãy tích chọn "Tin tiêu điểm" trong trang Admin.
         </div>
-        {% endfor %}
-    </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for post in latest_posts|slice:"1:7" %}
+            <article class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-xl transition-all duration-300 group flex flex-col">
+                <a href="{% url 'post_detail' post.pk %}" class="relative block h-52 overflow-hidden bg-gray-100">
+                    {% if post.image_file %}
+                    <img src="{{ post.image_file.url }}" alt="{{ post.title }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">
+                    {% elif post.image_url %}
+                    <img src="{{ post.image_url }}" alt="{{ post.title }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">
+                    {% else %}
+                    <img src="https://placehold.co/600x338/e5e7eb/9ca3af?text=No+Image" alt="{{ post.title }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">
+                    {% endif %}
+                    {% with cat=post.categories.first %}
+                    {% if cat %}<span class="absolute top-3 left-3 bg-white/90 backdrop-blur-sm text-gray-900 text-[10px] font-bold px-2.5 py-1 rounded-md shadow-sm">{{ cat.icon }} {{ cat.name }}</span>{% endif %}
+                    {% endwith %}
+                </a>
+                <div class="p-5 flex flex-col flex-1">
+                    <a href="{% url 'post_detail' post.pk %}">
+                        <h3 class="text-lg font-bold text-[#111] mb-2 leading-snug line-clamp-2 group-hover:text-[#c0152a] transition-colors">{{ post.title }}</h3>
+                    </a>
+                    <p class="text-gray-500 text-sm leading-relaxed line-clamp-3 mb-5">{{ post.content|striptags|truncatewords:20 }}</p>
+                    <div class="mt-auto flex items-center justify-between border-t border-gray-100 pt-3 text-[11px] text-gray-400">
+                        <div class="flex items-center gap-3">
+                            <span class="flex items-center gap-1">
+                                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.5"/></svg>
+                                {{ post.views_count }}
+                            </span>
+                            <span>{{ post.created_at|date:"d/m/Y" }}</span>
+                        </div>
+                        <span class="font-semibold text-[#c0152a]">Đọc tiếp →</span>
+                    </div>
+                </div>
+            </article>
+            {% endfor %}
+        </div>
+    </section>
     {% endif %}
 
-</main>
+    {% if trending_posts %}
+    <section class="mb-8">
+        <div class="flex items-center justify-between gap-3 mb-5">
+            <h2 class="flex items-center gap-2 text-xl sm:text-2xl font-bold text-[#111]">
+                <span class="w-9 h-9 rounded-xl bg-[#0f0f0f] text-white flex items-center justify-center">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg>
+                </span>
+                Thịnh hành
+            </h2>
+            <a href="{% url 'all_posts' %}?sort=trending" class="inline-flex items-center gap-1 text-sm font-semibold text-[#c0152a] hover:underline">
+                Xem tất cả
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+            </a>
+        </div>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {% for post in trending_posts %}
+            <a href="{% url 'post_detail' post.pk %}" class="group block bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-lg hover:border-[#c0152a]/30 transition-all">
+                <div class="h-36 overflow-hidden bg-gray-100">
+                    {% if post.image_file %}
+                    <img src="{{ post.image_file.url }}" alt="{{ post.title }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">
+                    {% elif post.image_url %}
+                    <img src="{{ post.image_url }}" alt="{{ post.title }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">
+                    {% else %}
+                    <img src="https://placehold.co/400x250/e5e7eb/9ca3af?text=..." alt="{{ post.title }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">
+                    {% endif %}
+                </div>
+                <div class="p-3">
+                    {% with cat=post.categories.first %}
+                    {% if cat %}<span class="text-[10px] font-bold text-[#c0152a] uppercase tracking-wider">{{ cat.icon }} {{ cat.name }}</span>{% endif %}
+                    {% endwith %}
+                    <h3 class="text-sm font-bold text-[#111] leading-snug line-clamp-2 mt-1 group-hover:text-[#c0152a] transition-colors">{{ post.title }}</h3>
+                    <p class="text-gray-400 text-[10px] mt-2">{{ post.created_at|date:"d/m/Y" }} · {{ post.views_count }} lượt xem</p>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
 
-<footer class="bg-[#0f0f0f] border-t-4 border-[#c0152a] py-10">
-    <div class="max-w-7xl mx-auto px-4">
-        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-            <div>
-                <p class="font-display text-white text-2xl font-bold tracking-widest">
-                    THENH<span class="text-[#c0152a]">DEPTRAI</span>
-                </p>
-                <p class="text-gray-500 text-xs mt-1">Tin tức thể thao 24/7 · Cập nhật nhanh nhất</p>
-            </div>
-            <nav class="flex flex-wrap gap-4">
-                {% for cat in categories %}
-                <a href="{% url 'category_view' cat.slug %}" class="font-display text-gray-400 hover:text-white text-xs tracking-wide uppercase transition-colors">{{ cat.icon }} {{ cat.name }}</a>
-                {% endfor %}
-            </nav>
-            <form id="newsletter-form" class="flex gap-2">
-                <input type="email" id="nl-email" placeholder="Email cua ban..."
-                    class="bg-[#1a1a1a] border border-gray-700 text-white text-xs px-4 py-2 w-52 focus:outline-none focus:border-[#c0152a]">
-                <button type="submit" class="bg-[#c0152a] hover:bg-[#96101f] text-white font-display text-xs px-4 py-2 tracking-wide transition-colors uppercase font-bold">
-                    Đăng ký
-                </button>
-            </form>
+    {% else %}
+    <div class="text-center py-20 bg-white rounded-2xl border border-gray-100">
+        <div class="w-16 h-16 rounded-2xl ai-soft border flex items-center justify-center mx-auto mb-4">
+            <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
         </div>
-        <div class="border-t border-gray-800 mt-8 pt-6 text-center">
-            <p class="text-gray-600 text-xs">
-                &copy; {% now "Y" %} THENHDEPTRAI · Thiết kế bởi <span class="text-[#c0152a]">Thenh Phong Vien 24/24</span>
-            </p>
-        </div>
+        <p class="text-[#111] font-bold text-lg">
+            {% if query %}Không tìm thấy bài viết với từ khóa “{{ query }}”{% elif current_category %}Chưa có bài viết trong chuyên mục này{% else %}Chưa có bài viết nào{% endif %}
+        </p>
+        <p class="text-gray-500 text-sm mt-1">Hãy quay lại sau hoặc thử chuyên mục khác.</p>
+        <a href="{% url 'all_posts' %}" class="inline-flex items-center gap-1 mt-5 bg-[#c0152a] hover:bg-[#96101f] text-white text-sm font-semibold px-4 py-2 rounded-full transition-colors">Xem tất cả bài viết</a>
     </div>
-</footer>
-
-<button id="back-to-top" aria-label="Lên đầu trang">↑</button>
-
-{% include 'partials/chat_widget.html' %}
-
-<div id="nl-toast" class="fixed bottom-28 right-6 z-[9999] bg-[#1a1a1a] border border-gray-700 text-white text-sm px-5 py-3 rounded-lg shadow-lg hidden font-display tracking-wide"></div>
-
-<script>
-document.getElementById('hamburger')?.addEventListener('click', function() {
-    document.getElementById('mobile-menu').classList.toggle('hidden');
-});
-
-document.getElementById('newsletter-form')?.addEventListener('submit', function(e) {
-    e.preventDefault();
-    var email = document.getElementById('nl-email').value.trim();
-    if (!email || email.indexOf('@') === -1) {
-        showToast('Email khong hop le.', true);
-        return;
-    }
-    fetch('/subscribe/', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({email: email})
-    })
-    .then(function(r) { return r.json(); })
-    .then(function(d) {
-        showToast(d.message, !d.ok);
-        if (d.ok) document.getElementById('nl-email').value = '';
-    })
-    .catch(function() {
-        showToast('Loi ket noi. Vui long thu lai.', true);
-    });
-});
-
-function showToast(msg, isError) {
-    var t = document.getElementById('nl-toast');
-    t.textContent = msg;
-    t.className = 'fixed bottom-28 right-6 z-[9999] border text-sm px-5 py-3 rounded-lg shadow-lg font-display tracking-wide ' +
-        (isError ? 'bg-red-900 border-red-700 text-red-200' : 'bg-green-900 border-green-700 text-green-200');
-    t.classList.remove('hidden');
-    setTimeout(function() { t.classList.add('hidden'); }, 4000);
-}
-
-/* THEME TOGGLE */
-(function() {
-    var toggle = document.getElementById('theme-toggle');
-    var html = document.documentElement;
-    var stored = localStorage.getItem('theme');
-    if (stored === 'dark') {
-        html.setAttribute('data-theme', 'dark');
-        toggle.textContent = '☀️';
-    }
-    toggle.addEventListener('click', function() {
-        if (html.getAttribute('data-theme') === 'dark') {
-            html.removeAttribute('data-theme');
-            localStorage.setItem('theme', 'light');
-            toggle.textContent = '🌙';
-        } else {
-            html.setAttribute('data-theme', 'dark');
-            localStorage.setItem('theme', 'dark');
-            toggle.textContent = '☀️';
-        }
-    });
-})();
-
-/* BACK TO TOP */
-(function() {
-    var btn = document.getElementById('back-to-top');
-    window.addEventListener('scroll', function() {
-        if (window.scrollY > 400) {
-            btn.classList.add('show');
-        } else {
-            btn.classList.remove('show');
-        }
-    });
-    btn.addEventListener('click', function() {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    });
-})();
-</script>
-
-</body>
-</html>
+    {% endif %}
+</div>
+{% endblock %}

@@ -72,9 +72,10 @@ def get_live_scores():
 # =========================================================
 
 def home(request):
-    latest_posts = Post.objects.all().order_by('-created_at')[:5]
-    trending_posts = Post.objects.all().order_by('-views_count', '-created_at')[:4]
-    featured_posts = Post.objects.filter(is_featured=True).order_by('-created_at')[:6]
+    latest_posts = Post.objects.all().order_by('-created_at').prefetch_related('categories')[:9]
+    hero = latest_posts.first()
+    trending_posts = Post.objects.all().order_by('-views_count', '-created_at').prefetch_related('categories')[:4]
+    featured_posts = Post.objects.filter(is_featured=True).exclude(pk=hero.pk if hero else 0).order_by('-created_at').prefetch_related('categories')[:6]
     categories = Category.objects.all()
     context = {
         'latest_posts': latest_posts,
@@ -91,9 +92,10 @@ def home(request):
 def category_view(request, slug):
     category = get_object_or_404(Category, slug=slug)
     all_posts = Post.objects.filter(categories=category).order_by('-created_at')
-    latest_posts = all_posts[:5]
-    trending_posts = Post.objects.filter(categories=category).order_by('-views_count', '-created_at')[:4]
-    featured_posts = Post.objects.filter(categories=category, is_featured=True).order_by('-created_at')[:6]
+    latest_posts = all_posts.prefetch_related('categories')[:9]
+    hero = latest_posts.first()
+    trending_posts = Post.objects.filter(categories=category).order_by('-views_count', '-created_at').prefetch_related('categories')[:4]
+    featured_posts = Post.objects.filter(categories=category, is_featured=True).exclude(pk=hero.pk if hero else 0).order_by('-created_at').prefetch_related('categories')[:6]
     categories = Category.objects.all()
     context = {
         'latest_posts': latest_posts,
@@ -115,13 +117,14 @@ def search(request):
         ).order_by('-created_at')
     else:
         all_posts = Post.objects.none()
-    latest_posts = all_posts[:5]
-    trending_posts = Post.objects.all().order_by('-views_count', '-created_at')[:4]
+    latest_posts = all_posts.prefetch_related('categories')[:9]
+    hero = latest_posts.first()
+    trending_posts = Post.objects.all().order_by('-views_count', '-created_at').prefetch_related('categories')[:4]
     categories = Category.objects.all()
     context = {
         'latest_posts': latest_posts,
         'trending_posts': trending_posts,
-        'featured_posts': Post.objects.filter(is_featured=True).order_by('-created_at')[:6],
+        'featured_posts': Post.objects.filter(is_featured=True).exclude(pk=hero.pk if hero else 0).order_by('-created_at').prefetch_related('categories')[:6],
         'categories': categories,
         'current_category': None,
         'query': q,
@@ -181,6 +184,10 @@ def add_comment(request, pk):
 def all_posts(request):
     sort = request.GET.get('sort', 'latest')
     page = request.GET.get('page', 1)
+    category_slug = request.GET.get('category', '').strip()
+    active_category = None
+    if category_slug:
+        active_category = Category.objects.filter(slug=category_slug).first()
 
     if sort == 'featured':
         posts = Post.objects.filter(is_featured=True).order_by('-created_at')
@@ -189,6 +196,10 @@ def all_posts(request):
     else:
         posts = Post.objects.all().order_by('-created_at')
 
+    if active_category:
+        posts = posts.filter(categories=active_category)
+
+    posts = posts.prefetch_related('categories')
     paginator = Paginator(posts, 12)
     page_obj = paginator.get_page(page)
     categories = Category.objects.all()
@@ -197,6 +208,7 @@ def all_posts(request):
         'page_obj': page_obj,
         'sort': sort,
         'categories': categories,
+        'active_category': active_category,
         'live_scores': get_live_scores(),
     }
     return render(request, 'all_posts.html', context)
