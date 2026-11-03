@@ -15,7 +15,6 @@
     </style>
 </head>
 <body class="bg-[#0f0f0f] min-h-screen flex items-center justify-center">
-    <button id="theme-toggle" aria-label="Chế độ sáng/tối" style="position:fixed;top:16px;right:16px;background:none;border:none;cursor:pointer;font-size:22px;z-index:99;padding:8px;border-radius:50%;background:rgba(255,255,255,0.1);width:40px;height:40px;display:flex;align-items:center;justify-content:center">🌙</button>
     <button id="back-to-top" aria-label="Lên đầu trang" style="display:none">↑</button>
     <div class="text-center px-6">
         <p class="font-display text-[120px] md:text-[180px] font-bold text-[#c0152a] leading-none">404</p>
@@ -26,27 +25,6 @@
         </a>
     </div>
 <script>
-(function() {
-    var toggle = document.getElementById('theme-toggle');
-    if (!toggle) return;
-    var html = document.documentElement;
-    var stored = localStorage.getItem('theme');
-    if (stored === 'dark') {
-        html.setAttribute('data-theme', 'dark');
-        toggle.textContent = '☀️';
-    }
-    toggle.addEventListener('click', function() {
-        if (html.getAttribute('data-theme') === 'dark') {
-            html.removeAttribute('data-theme');
-            localStorage.setItem('theme', 'light');
-            toggle.textContent = '🌙';
-        } else {
-            html.setAttribute('data-theme', 'dark');
-            localStorage.setItem('theme', 'dark');
-            toggle.textContent = '☀️';
-        }
-    });
-})();
 (function() {
     var btn = document.getElementById('back-to-top');
     if (!btn) return;
