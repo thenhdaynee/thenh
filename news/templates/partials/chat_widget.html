@@ -37,7 +37,7 @@
     max-width: 0;
     overflow: hidden;
     white-space: nowrap;
-    font-family: 'Inter', sans-serif;
+    font-family: var(--font-sans);
     font-size: 13px;
     font-weight: 700;
     transition: max-width 0.3s ease, margin 0.3s ease;
@@ -81,7 +81,7 @@
     max-width: calc(100vw - 32px);
     height: 540px;
     max-height: calc(100vh - 130px);
-    background: var(--bg-card, #fff);
+    background: #ffffff;
     border-radius: 20px;
     display: none;
     flex-direction: column;
@@ -89,7 +89,7 @@
     box-shadow: 0 20px 60px rgba(15, 23, 42, 0.28);
     border: 1px solid var(--border-card, #e5e7eb);
     overflow: hidden;
-    font-family: 'Inter', sans-serif;
+    font-family: var(--font-sans);
     animation: ai-panel-in 0.22s ease both;
 }
 #ai-chat-panel.open {
@@ -180,7 +180,7 @@
     display: flex;
     flex-direction: column;
     gap: 10px;
-    background: var(--bg-section, #f8f9fb);
+    background: rgba(248, 250, 252, 0.7);
 }
 #ai-chat-msgs::-webkit-scrollbar {
     width: 5px;
@@ -218,8 +218,9 @@
 }
 .ai-msg.error {
     align-self: flex-start;
-    background: #2d1a1a;
-    color: #f87171;
+    background: #fef2f2;
+    color: #b91c1c;
+    border: 1px solid #fecaca;
     border-bottom-left-radius: 5px;
 }
 .ai-msg.loading {
@@ -261,10 +262,10 @@
 #ai-chat-prompts::-webkit-scrollbar { display: none; }
 .ai-prompt {
     white-space: nowrap;
-    background: var(--bg-section, #f4f5f7);
-    border: 1px solid var(--border-card, #e5e7eb);
+    background: rgba(248, 250, 252, 0.7);
+    border: 1px solid #e2e8f0;
     color: var(--text-secondary, #4b5563);
-    font-family: 'Inter', sans-serif;
+    font-family: var(--font-sans);
     font-size: 11px;
     font-weight: 600;
     padding: 6px 10px;
@@ -288,12 +289,12 @@
 }
 #ai-chat-input {
     flex: 1;
-    background: var(--bg-section, #f4f5f7);
-    border: 1px solid var(--border-card, #e5e7eb);
+    background: rgba(248, 250, 252, 0.7);
+    border: 1px solid #e2e8f0;
     border-radius: 999px;
     padding: 10px 15px;
     color: var(--text-body, #111);
-    font-family: 'Inter', sans-serif;
+    font-family: var(--font-sans);
     font-size: 13px;
     outline: none;
     transition: border 0.2s, background 0.2s;
