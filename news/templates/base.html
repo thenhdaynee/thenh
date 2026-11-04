@@ -28,7 +28,7 @@
 
 {% include 'partials/chat_widget.html' %}
 
-<div id="nl-toast" class="fixed bottom-28 right-6 z-[9999] bg-[#1a1a1a] border border-gray-700 text-white text-sm px-5 py-3 rounded-xl shadow-lg hidden font-display tracking-wide"></div>
+<div id="nl-toast" class="fixed bottom-28 right-6 z-[9999] bg-white border border-slate-200 text-slate-700 text-sm px-5 py-3 rounded-xl shadow-lg hidden font-display tracking-wide"></div>
 
 <script>
 document.getElementById('mobile-search-toggle')?.addEventListener('click', function() {
@@ -62,7 +62,7 @@ function showToast(msg, isError) {
     if (!t) return;
     t.textContent = msg;
     t.className = 'fixed bottom-28 right-6 z-[9999] border text-sm px-5 py-3 rounded-xl shadow-lg font-display tracking-wide ' +
-        (isError ? 'bg-red-900 border-red-700 text-red-200' : 'bg-green-900 border-green-700 text-green-200');
+        (isError ? 'bg-red-50 border-red-200 text-red-700' : 'bg-green-50 border-green-200 text-green-700');
     t.classList.remove('hidden');
     setTimeout(function() { t.classList.add('hidden'); }, 4000);
 }
