@@ -34,6 +34,14 @@
   --tag-bg: #c0152a;
 }
 
+/* ----- SITE HEADER (chống rule header cũ ghi đè) ----- */
+header.site-header {
+  background-color: #ffffff;
+  color: #0f172a;
+  padding: 0;
+  display: block;
+}
+
 /* ----- BACK TO TOP ----- */
 #back-to-top {
   position: fixed;
